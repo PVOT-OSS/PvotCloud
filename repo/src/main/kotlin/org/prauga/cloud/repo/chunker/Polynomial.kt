@@ -6,11 +6,13 @@ package org.prauga.cloud.repo.chunker
 
 import java.security.SecureRandom
 
+// Mirrors restic/chunker polynomials.go line for line, constants and early returns included.
+@Suppress("MagicNumber", "ReturnCount")
 @JvmInline
 value class Polynomial(val value: Long) {
 
     val degree: Int
-        get() = 63 - java.lang.Long.numberOfLeadingZeros(value)
+        get() = 63 - value.countLeadingZeroBits()
 
     operator fun plus(other: Polynomial): Polynomial = Polynomial(value xor other.value)
 
@@ -82,7 +84,7 @@ value class Polynomial(val value: Long) {
         return result
     }
 
-    fun toHex(): String = java.lang.Long.toHexString(value)
+    fun toHex(): String = value.toULong().toString(16)
 
     private fun bit(i: Int): Boolean = ((value ushr i) and 1L) != 0L
 
@@ -98,7 +100,7 @@ value class Polynomial(val value: Long) {
         private const val RANDOM_TRIES = 1_000_000
         private const val DEGREE = 53
 
-        fun parse(hex: String): Polynomial = Polynomial(java.lang.Long.parseUnsignedLong(hex, 16))
+        fun parse(hex: String): Polynomial = Polynomial(hex.toULong(16).toLong())
 
         fun random(random: SecureRandom): Polynomial {
             repeat(RANDOM_TRIES) {
@@ -109,7 +111,7 @@ value class Polynomial(val value: Long) {
             error("no irreducible polynomial found")
         }
 
-        private fun degreeOf(value: Long): Int = 63 - java.lang.Long.numberOfLeadingZeros(value)
+        private fun degreeOf(value: Long): Int = 63 - value.countLeadingZeroBits()
 
         private fun qp(p: Int, g: Polynomial): Polynomial {
             val num = 1L shl p

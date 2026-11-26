@@ -8,6 +8,9 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 
+// Mirrors restic/chunker line for line; its byte, window and table constants stay inline for
+// comparison.
+@Suppress("MagicNumber", "ReturnCount")
 class Chunker(
     private val polynomial: Polynomial,
     private val minSize: Int = MIN_SIZE,
