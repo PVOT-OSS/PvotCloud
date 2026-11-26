@@ -47,8 +47,9 @@ internal class AppDataArchive(private val context: Context, private val spec: Ap
         writer.finish()
     }
 
-    fun import(input: InputStream) {
+    fun import(input: InputStream): Boolean {
         val reader = TarReader(input)
+        var replacedPreferences = false
         while (true) {
             val entry = reader.next() ?: break
             val target = resolve(entry.path)
@@ -60,7 +61,9 @@ internal class AppDataArchive(private val context: Context, private val spec: Ap
             }
             if (!partial.renameTo(target)) throw IOException("could not replace ${entry.path}")
             target.setLastModified(entry.modifiedSeconds * MILLIS)
+            if (entry.path.startsWith("$SHARED_PREFS/")) replacedPreferences = true
         }
+        return replacedPreferences
     }
 
     private fun resolve(path: String): File {

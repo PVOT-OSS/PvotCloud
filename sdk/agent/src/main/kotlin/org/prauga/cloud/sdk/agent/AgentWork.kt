@@ -14,6 +14,10 @@ import org.prauga.cloud.sdk.ResultCode
 
 internal class AgentWork(private val context: Context, private val config: BackupAgentConfig) {
 
+    @Volatile
+    var restartRequired: Boolean = config.needsRestart
+        private set
+
     fun describe(callerTrusted: Boolean): AgentInfo =
         AgentInfo(
             contractVersion = BackupContract.VERSION,
@@ -46,7 +50,9 @@ internal class AgentWork(private val context: Context, private val config: Backu
         return when {
             fromSchema > config.schemaVersion -> ResultCode.SCHEMA_TOO_NEW
             type == BackupContract.TYPE_APP_DATA && appData != null ->
-                ResultCode.OK.also { AppDataArchive(context, appData).import(input) }
+                ResultCode.OK.also {
+                    if (AppDataArchive(context, appData).import(input)) restartRequired = true
+                }
             type == BackupContract.TYPE_CREDENTIALS && credentials != null ->
                 ResultCode.OK.also { credentials.import(CredentialsFormat.read(input)) }
             custom != null -> ResultCode.OK.also { custom.import(input, fromSchema) }

@@ -67,7 +67,7 @@ class BackupAgentService : Service() {
                 if (!trusted()) return
                 executor.execute {
                     work.restoreFinished()
-                    if (config.needsRestart) Process.killProcess(Process.myPid())
+                    if (work.restartRequired) Process.killProcess(Process.myPid())
                 }
             }
         }

@@ -64,8 +64,10 @@ class AppDataArchiveTest {
         val archive = export(AppDataSpec.Everything)
         wipe()
 
-        AppDataArchive(context, AppDataSpec.Everything).import(ByteArrayInputStream(archive))
+        val replacedPreferences =
+            AppDataArchive(context, AppDataSpec.Everything).import(ByteArrayInputStream(archive))
 
+        assertThat(replacedPreferences).isEqualTo(true)
         assertThat(notes.readText()).isEqualTo("milk, eggs")
         assertThat(extra.readBytes().toList()).containsExactly(1.toByte(), 2.toByte(), 3.toByte())
         assertThat(File(context.dataDir, "shared_prefs/prefs.xml").readText().contains("dark"))
@@ -87,6 +89,16 @@ class AppDataArchiveTest {
             paths(export(AppDataSpec.Selected(listOf("ledger.db"), emptyList(), listOf("notes"))))
 
         assertThat(paths).containsExactly("db/ledger.db", "file/notes/today.txt")
+    }
+
+    @Test
+    fun importingWithoutPreferencesNeedsNoRestart() {
+        val archive = export(AppDataSpec.Selected(listOf("ledger.db"), emptyList(), emptyList()))
+
+        val replacedPreferences =
+            AppDataArchive(context, AppDataSpec.Everything).import(ByteArrayInputStream(archive))
+
+        assertThat(replacedPreferences).isFalse()
     }
 
     @Test
