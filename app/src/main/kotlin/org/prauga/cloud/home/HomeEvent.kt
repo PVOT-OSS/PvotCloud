@@ -1,10 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 package org.prauga.cloud.home
 
 sealed interface HomeEvent {
-    data class AddItem(val title: String) : HomeEvent
-
     data object Retry : HomeEvent
 }

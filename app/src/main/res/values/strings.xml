@@ -6,10 +6,46 @@
 <resources>
     <string name="app_name">Pvot Cloud</string>
 
-    <string name="home_title">Items</string>
-    <string name="home_empty">No items yet</string>
-    <string name="home_add">Add item</string>
-    <string name="home_new_item">Item %1$d</string>
-    <string name="home_error_title">Couldn\'t load items</string>
+    <string name="home_storage">Storage</string>
+    <string name="home_storage_none">No location chosen</string>
+    <string name="home_storage_used">%1$s of %2$s</string>
+    <string name="home_status_never">Not backed up yet</string>
+    <string name="home_status_done">Backed up</string>
+    <string name="home_status_failed">Last backup failed</string>
+    <string name="home_status_device">This phone · %1$s</string>
+    <string name="home_contents_planned">What gets backed up</string>
+    <string name="home_contents_saved">Saved in this backup</string>
+    <string name="home_recovery_phrase">Recovery phrase</string>
+    <string name="home_verify">Verify backup</string>
+    <string name="home_encryption">Encryption</string>
+    <string name="home_location">Backup location</string>
+    <string name="home_schedule">Schedule</string>
+    <string name="home_schedule_daily">Daily, while charging</string>
+    <string name="home_schedule_manual">Only when you ask</string>
+    <string name="home_connected_apps">Apps using Pvot Cloud</string>
+    <string name="home_value_saved">Saved</string>
+    <string name="home_value_not_set">Not set</string>
+    <string name="home_value_never">Never</string>
+    <string name="home_value_checked">Checked %1$s</string>
+    <string name="home_value_always_on">Always on</string>
+    <string name="home_value_not_chosen">Not chosen</string>
+    <string name="home_value_none">None</string>
+    <string name="home_value_not_yet">Not yet</string>
+    <plurals name="home_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <plurals name="home_apps">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <string name="home_error_title">Couldn\'t load your backup status</string>
     <string name="home_error_message">Try again in a moment.</string>
+
+    <string name="category_photos">Photos</string>
+    <string name="category_contacts">Contacts</string>
+    <string name="category_calendars">Calendars</string>
+    <string name="category_messages">Messages</string>
+    <string name="category_apps">Apps</string>
+    <string name="category_folders">Folders</string>
 </resources>
