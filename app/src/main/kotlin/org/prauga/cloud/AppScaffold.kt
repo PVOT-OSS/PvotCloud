@@ -16,8 +16,9 @@ import androidx.compose.ui.graphics.Color
 import org.prauga.cloud.home.HomeScreen
 
 @Composable
-fun AppScaffold() {
+fun AppScaffold(modifier: Modifier = Modifier) {
     Scaffold(
+        modifier = modifier,
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onBackground,
     ) { padding ->
