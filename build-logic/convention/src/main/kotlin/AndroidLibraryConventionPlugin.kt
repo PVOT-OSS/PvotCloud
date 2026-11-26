@@ -10,6 +10,8 @@ import org.gradle.kotlin.dsl.dependencies
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) =
         with(target) {
+            pluginManager.apply("pvot.quality.spotless")
+            pluginManager.apply("pvot.quality.detekt")
             pluginManager.apply("com.android.library")
             extensions.configure<LibraryExtension> {
                 compileSdk { version = release(Sdk.COMPILE) { minorApiLevel = Sdk.COMPILE_MINOR } }
@@ -21,6 +23,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                     sourceCompatibility = JAVA_VERSION
                     targetCompatibility = JAVA_VERSION
                 }
+                lint { applyPvotDefaults(target) }
             }
             dependencies { add("testImplementation", libs.lib("junit")) }
         }

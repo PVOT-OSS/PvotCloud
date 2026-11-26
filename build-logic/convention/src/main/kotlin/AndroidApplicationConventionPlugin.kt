@@ -10,6 +10,8 @@ import org.gradle.kotlin.dsl.dependencies
 class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) =
         with(target) {
+            pluginManager.apply("pvot.quality.spotless")
+            pluginManager.apply("pvot.quality.detekt")
             pluginManager.apply("com.android.application")
             extensions.configure<ApplicationExtension> {
                 compileSdk { version = release(Sdk.COMPILE) { minorApiLevel = Sdk.COMPILE_MINOR } }
@@ -22,6 +24,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     sourceCompatibility = JAVA_VERSION
                     targetCompatibility = JAVA_VERSION
                 }
+                lint { applyPvotDefaults(target) }
                 dependenciesInfo {
                     includeInApk = false
                     includeInBundle = false

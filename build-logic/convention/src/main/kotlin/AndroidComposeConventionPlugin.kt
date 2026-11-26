@@ -10,6 +10,8 @@ import org.gradle.kotlin.dsl.dependencies
 class AndroidComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) =
         with(target) {
+            pluginManager.apply("pvot.quality.spotless")
+            pluginManager.apply("pvot.quality.detekt")
             pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
             extensions.findByType(LibraryExtension::class.java)?.buildFeatures?.compose = true
             extensions.findByType(ApplicationExtension::class.java)?.buildFeatures?.compose = true

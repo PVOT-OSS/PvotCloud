@@ -29,3 +29,8 @@ internal fun VersionCatalog.lib(alias: String): Provider<MinimalExternalModuleDe
     findLibrary(alias).orElseThrow {
         IllegalArgumentException("No library '$alias' in libs.versions.toml")
     }
+
+internal fun VersionCatalog.version(alias: String): String =
+    findVersion(alias)
+        .orElseThrow { IllegalArgumentException("No version '$alias' in libs.versions.toml") }
+        .requiredVersion

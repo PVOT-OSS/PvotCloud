@@ -12,6 +12,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 class JvmLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) =
         with(target) {
+            pluginManager.apply("pvot.quality.spotless")
+            pluginManager.apply("pvot.quality.detekt")
             pluginManager.apply("org.jetbrains.kotlin.jvm")
             extensions.configure<JavaPluginExtension> {
                 sourceCompatibility = JAVA_VERSION

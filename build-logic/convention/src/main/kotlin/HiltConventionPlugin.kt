@@ -8,6 +8,8 @@ import org.gradle.kotlin.dsl.dependencies
 class HiltConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) =
         with(target) {
+            pluginManager.apply("pvot.quality.spotless")
+            pluginManager.apply("pvot.quality.detekt")
             pluginManager.apply("com.google.devtools.ksp")
             pluginManager.apply("com.google.dagger.hilt.android")
             dependencies {

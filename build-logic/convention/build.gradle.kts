@@ -9,6 +9,8 @@ dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.compose.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.spotless.gradlePlugin)
+    compileOnly(libs.detekt.gradlePlugin)
 }
 
 gradlePlugin {
@@ -32,6 +34,14 @@ gradlePlugin {
         register("jvmLibrary") {
             id = "pvot.jvm.library"
             implementationClass = "JvmLibraryConventionPlugin"
+        }
+        register("qualitySpotless") {
+            id = "pvot.quality.spotless"
+            implementationClass = "SpotlessConventionPlugin"
+        }
+        register("qualityDetekt") {
+            id = "pvot.quality.detekt"
+            implementationClass = "DetektConventionPlugin"
         }
     }
 }
