@@ -1,0 +1,16 @@
+// SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
+
+plugins { alias(libs.plugins.pvot.android.application) }
+
+android {
+    namespace = "org.prauga.cloud.sample.notes"
+
+    defaultConfig {
+        applicationId = "org.prauga.cloud.sample.notes"
+        versionCode = 1
+        versionName = "1.0"
+    }
+}
+
+dependencies { implementation(project(":sdk:agent")) }

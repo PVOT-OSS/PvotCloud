@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Sample Ledger</string>
+    <string name="add_expense">Add expense</string>
+    <string name="set_budget">Set budget</string>
+    <string name="write_draft">Write draft (not backed up)</string>
+    <string name="budget_value">500 EUR a month</string>
+    <string name="draft_value">unsent draft</string>
+    <string name="none">none</string>
+    <string name="present">present</string>
+    <string name="status">Sample Ledger (declared backup, schema 2)\n\nExpenses: %1$d, total %2$d\nCurrency setting: %3$s\nBudget: %4$s\nDraft: %5$s</string>
+</resources>

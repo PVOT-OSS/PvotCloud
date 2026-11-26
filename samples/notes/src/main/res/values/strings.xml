@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Sample Notes</string>
+    <string name="add_note">Add note</string>
+    <string name="note_text">Note number %1$d</string>
+    <string name="status">Sample Notes (zero-code backup)\n\nNotes in file: %1$d\nRows in database: %2$d\nCounter in preferences: %3$d\nLast note: %4$s</string>
+</resources>

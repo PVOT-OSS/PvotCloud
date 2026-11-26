@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Sample Vault</string>
+    <string name="add_sign_in">Add sign-in</string>
+    <string name="site">Site %1$d</string>
+    <string name="user">user%1$d@example.org</string>
+    <string name="re_enrol">Turn fingerprint unlock on again</string>
+    <string name="status">Sample Vault (credentials, Keystore-encrypted)\n\nSign-ins: %1$d\n%2$s\nSecrets that decrypt: %3$d</string>
+</resources>

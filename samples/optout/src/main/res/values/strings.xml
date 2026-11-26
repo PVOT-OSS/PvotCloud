@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="app_name">Sample Opt-out</string>
+    <string name="status">Sample Opt-out\n\nThis app sets allowBackup=\"false\" and declares nothing, so Pvot Cloud lists it but skips it with the app\'s reason.</string>
+</resources>

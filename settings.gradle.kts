@@ -53,4 +53,12 @@ include(":sdk:agent")
 
 include(":sdk-host")
 
+include(":samples:notes")
+
+include(":samples:ledger")
+
+include(":samples:vault")
+
+include(":samples:optout")
+
 includeBuild("PvotLib")
