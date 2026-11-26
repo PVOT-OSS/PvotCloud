@@ -9,6 +9,9 @@ sealed class RepositoryException(message: String) : Exception(message) {
 
     class AlreadyExists : RepositoryException("a repository already exists at this location")
 
+    class Corrupted(type: FileType, name: String) :
+        RepositoryException("$type file $name failed verification")
+
     class Unsupported(version: Int) :
         RepositoryException("unsupported repository version $version")
 }

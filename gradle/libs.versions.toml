@@ -16,6 +16,7 @@ pvot = "1.0.0"
 junit = "4.13.2"
 bouncycastle = "1.85"
 kotlinxSerialization = "1.12.0"
+zstdJni = "1.5.7-29"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +38,7 @@ pvot-core-ui = { group = "com.prauga.pvot", name = "core-ui", version.ref = "pvo
 pvot-design-system = { group = "com.prauga.pvot", name = "design-system", version.ref = "pvot" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
+zstd-jni = { group = "com.github.luben", name = "zstd-jni", version.ref = "zstdJni" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }

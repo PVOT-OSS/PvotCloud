@@ -23,4 +23,10 @@ class InMemoryBackend : Backend {
     override fun delete(type: FileType, name: String) {
         files.remove(RepositoryLayout.path(type, name))
     }
+
+    fun corrupt(type: FileType, name: String) {
+        val path = RepositoryLayout.path(type, name)
+        val data = checkNotNull(files[path])
+        data[data.size / 2] = (data[data.size / 2].toInt() xor 1).toByte()
+    }
 }
