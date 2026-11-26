@@ -35,10 +35,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.zstd.jni) { artifact { type = "aar" } }
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(project(":repo"))
     androidTestImplementation(project(":storage"))
-    androidTestImplementation(libs.zstd.jni) { artifact { type = "aar" } }
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
 }

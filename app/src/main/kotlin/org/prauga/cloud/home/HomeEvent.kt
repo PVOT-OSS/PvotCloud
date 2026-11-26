@@ -5,4 +5,6 @@ package org.prauga.cloud.home
 
 sealed interface HomeEvent {
     data object Retry : HomeEvent
+
+    data object BackUpNow : HomeEvent
 }

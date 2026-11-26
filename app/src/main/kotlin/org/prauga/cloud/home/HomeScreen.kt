@@ -3,9 +3,12 @@
 
 package org.prauga.cloud.home
 
+import android.Manifest
 import android.os.Build
 import android.text.format.DateUtils
 import android.text.format.Formatter
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +49,7 @@ import com.prauga.pvot.designsystem.components.PvotTileGrid
 import com.prauga.pvot.designsystem.components.button.PvotButton
 import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotListRow
+import com.prauga.pvot.designsystem.components.progress.PvotLinearProgress
 import com.prauga.pvot.designsystem.components.progress.PvotProportionBar
 import com.prauga.pvot.designsystem.theme.PvotSpacing
 import java.time.Instant
@@ -55,6 +59,7 @@ import org.prauga.cloud.core.model.BackupOutcome
 import org.prauga.cloud.core.model.BackupOverview
 import org.prauga.cloud.core.model.BackupSchedule
 import org.prauga.cloud.core.model.CategoryStatus
+import org.prauga.cloud.core.model.RunProgress
 import org.prauga.cloud.onboarding.OnboardingFlow
 
 @Composable
@@ -64,7 +69,7 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun HomeContent(state: UiState<BackupOverview>, onEvent: (HomeEvent) -> Unit) {
+private fun HomeContent(state: UiState<HomeData>, onEvent: (HomeEvent) -> Unit) {
     when (state) {
         UiState.Loading -> PvotLoadingContent()
         is UiState.Error ->
@@ -73,24 +78,41 @@ private fun HomeContent(state: UiState<BackupOverview>, onEvent: (HomeEvent) -> 
                 message = stringResource(R.string.home_error_message),
                 onRetry = { onEvent(HomeEvent.Retry) },
             )
-        is UiState.Success -> Overview(state.data)
+        is UiState.Success -> Overview(state.data.overview, state.data.running, onEvent)
     }
 }
 
 @Composable
-private fun Overview(overview: BackupOverview) {
+private fun Overview(
+    overview: BackupOverview,
+    running: RunProgress?,
+    onEvent: (HomeEvent) -> Unit,
+) {
     var settingUp by rememberSaveable { mutableStateOf(false) }
     OnboardingFlow(visible = settingUp, onClose = { settingUp = false })
     val onSetUp = { settingUp = true }
+    val askThenBackUp =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            onEvent(HomeEvent.BackUpNow)
+        }
+    val setUp = overview.location != null && overview.recoveryPhraseSaved
     PvotScreen(Modifier.fillMaxSize()) {
         item { Header() }
         item { StorageCard(overview) }
-        item { StatusCard(overview) }
-        if (overview.location == null || !overview.recoveryPhraseSaved) {
+        item { StatusCard(overview, running) }
+        if (!setUp) {
             item {
                 PvotButton(
                     text = stringResource(R.string.home_set_up),
                     onClick = onSetUp,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        } else if (running == null) {
+            item {
+                PvotButton(
+                    text = stringResource(R.string.home_back_up_now),
+                    onClick = { askThenBackUp.launch(backupPermissions()) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -243,25 +265,82 @@ private fun StorageCard(overview: BackupOverview) {
 }
 
 @Composable
-private fun StatusCard(overview: BackupOverview) {
+private fun StatusCard(overview: BackupOverview, running: RunProgress?) {
+    val context = LocalContext.current
     val last = overview.lastBackup
     val (status, title) =
-        when (last?.outcome) {
-            null -> PvotStatus.Neutral to R.string.home_status_never
-            BackupOutcome.SUCCESS -> PvotStatus.Good to R.string.home_status_done
-            BackupOutcome.FAILED -> PvotStatus.Error to R.string.home_status_failed
+        when {
+            running != null -> PvotStatus.Warning to R.string.home_status_running
+            last == null -> PvotStatus.Neutral to R.string.home_status_never
+            last.outcome == BackupOutcome.SUCCESS -> PvotStatus.Good to R.string.home_status_done
+            else -> PvotStatus.Error to R.string.home_status_failed
+        }
+    val supporting =
+        when {
+            running == null -> stringResource(R.string.home_status_device, Build.MODEL)
+            running.totalFiles == 0 -> stringResource(R.string.home_status_preparing)
+            else ->
+                pluralStringResource(
+                    R.plurals.home_status_running_detail,
+                    running.totalFiles,
+                    running.files,
+                    running.totalFiles,
+                    Formatter.formatShortFileSize(context, running.bytes),
+                    Formatter.formatShortFileSize(context, running.totalBytes),
+                )
         }
     PvotListGroup(Modifier.fillMaxWidth()) {
         item {
-            PvotListRow(
-                title = stringResource(title),
-                supportingText = stringResource(R.string.home_status_device, Build.MODEL),
-                leading = { PvotStatusDot(status, Modifier.padding(PvotSpacing.S)) },
-                trailing = last?.let { { TrailingText(relativeTime(it.finishedAt)) } },
-            )
+            Column {
+                PvotListRow(
+                    title = stringResource(title),
+                    supportingText = supporting,
+                    leading = { PvotStatusDot(status, Modifier.padding(PvotSpacing.S)) },
+                    trailing =
+                        if (running == null)
+                            last?.let { { TrailingText(relativeTime(it.finishedAt)) } }
+                        else null,
+                )
+                if (running != null) {
+                    val share =
+                        if (running.totalBytes <= 0) 0f
+                        else (running.bytes.toFloat() / running.totalBytes).coerceIn(0f, 1f)
+                    PvotLinearProgress(
+                        progress = { share },
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(horizontal = PvotSpacing.L, vertical = PvotSpacing.S),
+                    )
+                }
+            }
         }
     }
 }
+
+private fun backupPermissions(): Array<String> =
+    when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
+                Manifest.permission.ACCESS_MEDIA_LOCATION,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.ACCESS_MEDIA_LOCATION,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.ACCESS_MEDIA_LOCATION,
+            )
+        else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
 
 @Composable
 private fun ValueRow(@DrawableRes icon: Int, @StringRes title: Int, value: String) {
@@ -288,7 +367,15 @@ private fun verifiedText(instant: Instant?): String =
     if (instant == null) stringResource(R.string.home_value_never)
     else stringResource(R.string.home_value_checked, relativeTime(instant))
 
+@Composable
 private fun relativeTime(instant: Instant): String =
+    if (System.currentTimeMillis() - instant.toEpochMilli() < DateUtils.MINUTE_IN_MILLIS) {
+        stringResource(R.string.home_just_now)
+    } else {
+        relativeSpan(instant)
+    }
+
+private fun relativeSpan(instant: Instant): String =
     DateUtils.getRelativeTimeSpanString(
             instant.toEpochMilli(),
             System.currentTimeMillis(),
@@ -313,8 +400,8 @@ private fun tileFor(status: CategoryStatus): CategoryTile {
     val items = status.items
     val value =
         when {
-            bytes != null -> Formatter.formatShortFileSize(LocalContext.current, bytes)
             items != null -> pluralStringResource(R.plurals.home_items, items, items)
+            bytes != null -> Formatter.formatShortFileSize(LocalContext.current, bytes)
             else -> stringResource(R.string.home_value_not_yet)
         }
     return CategoryTile(stringResource(title), value, icon)

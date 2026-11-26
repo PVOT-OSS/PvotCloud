@@ -68,6 +68,22 @@
     <string name="onboarding_done_message">Backups will go to %1$s, encrypted with your recovery phrase.</string>
     <string name="onboarding_done">Done</string>
 
+    <string name="home_back_up_now">Back up now</string>
+    <string name="home_status_running">Backing up…</string>
+    <plurals name="home_status_running_detail">
+        <item quantity="one">%1$d of %2$d file · %3$s of %4$s</item>
+        <item quantity="other">%1$d of %2$d files · %3$s of %4$s</item>
+    </plurals>
+    <string name="home_status_preparing">Getting ready…</string>
+    <string name="home_just_now">Just now</string>
+
+    <string name="notification_channel_backups">Backups</string>
+    <string name="notification_backing_up">Backing up</string>
+    <plurals name="notification_progress">
+        <item quantity="one">%1$d of %2$d file · %3$s of %4$s</item>
+        <item quantity="other">%1$d of %2$d files · %3$s of %4$s</item>
+    </plurals>
+
     <string name="category_photos">Photos</string>
     <string name="category_contacts">Contacts</string>
     <string name="category_calendars">Calendars</string>

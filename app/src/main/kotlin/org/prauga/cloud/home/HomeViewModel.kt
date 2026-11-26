@@ -13,23 +13,28 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import org.prauga.cloud.core.data.BackupScheduler
 import org.prauga.cloud.core.data.BackupStatusRepository
-import org.prauga.cloud.core.model.BackupOverview
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val repository: BackupStatusRepository) :
-    ViewModel() {
+class HomeViewModel
+@Inject
+constructor(
+    private val repository: BackupStatusRepository,
+    private val scheduler: BackupScheduler,
+) : ViewModel() {
     private val attempt = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val state: StateFlow<UiState<BackupOverview>> =
+    val state: StateFlow<UiState<HomeData>> =
         attempt
             .flatMapLatest {
-                repository.overview
-                    .map<BackupOverview, UiState<BackupOverview>> { UiState.Success(it) }
+                combine(repository.overview, scheduler.running, ::HomeData)
+                    .map<HomeData, UiState<HomeData>> { UiState.Success(it) }
                     .catch { emit(UiState.Error(it.message.orEmpty(), it)) }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState.Loading)
@@ -37,6 +42,7 @@ class HomeViewModel @Inject constructor(private val repository: BackupStatusRepo
     fun onEvent(event: HomeEvent) {
         when (event) {
             HomeEvent.Retry -> attempt.value++
+            HomeEvent.BackUpNow -> scheduler.backUpNow()
         }
     }
 }

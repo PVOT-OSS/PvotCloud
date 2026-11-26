@@ -7,6 +7,7 @@ import com.prauga.pvot.coreui.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -19,8 +20,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.prauga.cloud.core.data.BackupScheduler
 import org.prauga.cloud.core.data.BackupStatusRepository
 import org.prauga.cloud.core.model.BackupOverview
+import org.prauga.cloud.core.model.RunProgress
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
@@ -37,17 +40,26 @@ class HomeViewModelTest {
     @Test
     fun showsTheOverview() = runTest {
         val overview = BackupOverview.notSetUp()
-        val viewModel = HomeViewModel(Repository(flowOf(overview)))
+        val scheduler = Scheduler()
+        val viewModel = HomeViewModel(Repository(flowOf(overview)), scheduler)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.state.collect {}
         }
 
-        assertEquals(UiState.Success(overview), viewModel.state.value)
+        assertEquals(UiState.Success(HomeData(overview, running = null)), viewModel.state.value)
+
+        val progress = RunProgress(files = 3, totalFiles = 10, bytes = 300, totalBytes = 1000)
+        scheduler.progress.value = progress
+        assertEquals(UiState.Success(HomeData(overview, progress)), viewModel.state.value)
+
+        viewModel.onEvent(HomeEvent.BackUpNow)
+        assertEquals(1, scheduler.requests)
     }
 
     @Test
     fun failureShowsAnError() = runTest {
-        val viewModel = HomeViewModel(Repository(flow { error("storage unavailable") }))
+        val viewModel =
+            HomeViewModel(Repository(flow { error("storage unavailable") }), Scheduler())
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.state.collect {}
         }
@@ -56,4 +68,14 @@ class HomeViewModelTest {
     }
 
     private class Repository(override val overview: Flow<BackupOverview>) : BackupStatusRepository
+
+    private class Scheduler : BackupScheduler {
+        val progress = MutableStateFlow<RunProgress?>(null)
+        var requests = 0
+        override val running: Flow<RunProgress?> = progress
+
+        override fun backUpNow() {
+            requests++
+        }
+    }
 }
