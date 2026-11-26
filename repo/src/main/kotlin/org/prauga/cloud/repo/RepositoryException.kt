@@ -12,6 +12,8 @@ sealed class RepositoryException(message: String) : Exception(message) {
     class Corrupted(type: FileType, name: String) :
         RepositoryException("$type file $name failed verification")
 
+    class MissingBlob(id: Id) : RepositoryException("blob $id is not in the index")
+
     class Unsupported(version: Int) :
         RepositoryException("unsupported repository version $version")
 }
