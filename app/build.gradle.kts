@@ -24,6 +24,7 @@ android {
 
 dependencies {
     implementation(project(":core:data"))
+    implementation(project(":core:keys"))
     implementation(libs.pvot.design.system)
     implementation(libs.pvot.core.ui)
     implementation(libs.androidx.core.ktx)

@@ -42,6 +42,32 @@
     <string name="home_error_title">Couldn\'t load your backup status</string>
     <string name="home_error_message">Try again in a moment.</string>
 
+    <string name="home_set_up">Set up backup</string>
+
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_not_now">Not now</string>
+    <string name="onboarding_welcome_title">Back up this phone</string>
+    <string name="onboarding_welcome_message">Your photos, contacts and apps are saved to a drive you choose and encrypted with a key only you hold.</string>
+    <string name="onboarding_location_title">Choose where backups go</string>
+    <string name="onboarding_location_message">Pick a folder on this phone, an SD card or a USB drive. A drive you can unplug keeps your backup safe if the phone is lost.</string>
+    <string name="onboarding_location_choose">Choose folder</string>
+    <string name="onboarding_location_failed">Pvot Cloud can\'t use that folder. Choose another one.</string>
+    <string name="onboarding_phrase_title">Save your recovery phrase</string>
+    <string name="onboarding_phrase_message">Write these 12 words down, in order. They are the only way to open your backup on a new phone, and nobody can recover them for you.</string>
+    <string name="onboarding_phrase_written">I\'ve written them down</string>
+    <string name="onboarding_word">%1$d. %2$s</string>
+    <string name="onboarding_confirm_title">Check your phrase</string>
+    <string name="onboarding_confirm_message">Pick the right word for each number.</string>
+    <string name="onboarding_confirm_word">Word %1$d</string>
+    <string name="onboarding_confirm_check">Confirm</string>
+    <string name="onboarding_confirm_show_again">Show the words again</string>
+    <string name="onboarding_confirm_wrong">Some words don\'t match. Check your list and try again.</string>
+    <string name="onboarding_categories_title">Choose what to back up</string>
+    <string name="onboarding_categories_message">You can change this later.</string>
+    <string name="onboarding_done_title">You\'re all set</string>
+    <string name="onboarding_done_message">Backups will go to %1$s, encrypted with your recovery phrase.</string>
+    <string name="onboarding_done">Done</string>
+
     <string name="category_photos">Photos</string>
     <string name="category_contacts">Contacts</string>
     <string name="category_calendars">Calendars</string>

@@ -20,6 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +43,7 @@ import com.prauga.pvot.designsystem.components.PvotScreen
 import com.prauga.pvot.designsystem.components.PvotStatus
 import com.prauga.pvot.designsystem.components.PvotStatusDot
 import com.prauga.pvot.designsystem.components.PvotTileGrid
+import com.prauga.pvot.designsystem.components.button.PvotButton
 import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotListRow
 import com.prauga.pvot.designsystem.components.progress.PvotProportionBar
@@ -51,6 +55,7 @@ import org.prauga.cloud.core.model.BackupOutcome
 import org.prauga.cloud.core.model.BackupOverview
 import org.prauga.cloud.core.model.BackupSchedule
 import org.prauga.cloud.core.model.CategoryStatus
+import org.prauga.cloud.onboarding.OnboardingFlow
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
@@ -74,10 +79,22 @@ private fun HomeContent(state: UiState<BackupOverview>, onEvent: (HomeEvent) -> 
 
 @Composable
 private fun Overview(overview: BackupOverview) {
+    var settingUp by rememberSaveable { mutableStateOf(false) }
+    OnboardingFlow(visible = settingUp, onClose = { settingUp = false })
+    val onSetUp = { settingUp = true }
     PvotScreen(Modifier.fillMaxSize()) {
         item { Header() }
         item { StorageCard(overview) }
         item { StatusCard(overview) }
+        if (overview.location == null || !overview.recoveryPhraseSaved) {
+            item {
+                PvotButton(
+                    text = stringResource(R.string.home_set_up),
+                    onClick = onSetUp,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
         item {
             val tiles = overview.categories.map { status -> tileFor(status) }
             PvotTileGrid(
