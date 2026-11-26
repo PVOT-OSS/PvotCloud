@@ -10,6 +10,7 @@ android { namespace = "org.prauga.cloud.sdk.host" }
 
 dependencies {
     api(project(":sdk:api"))
+    api(project(":repo"))
     api(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.core.ktx)
     androidTestImplementation(project(":sdk:agent"))
