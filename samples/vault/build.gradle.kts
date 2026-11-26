@@ -11,6 +11,8 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
+
+    buildTypes { release { optimization { enable = true } } }
 }
 
 dependencies { implementation(project(":sdk:agent")) }
