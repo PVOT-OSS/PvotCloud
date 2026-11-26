@@ -8,7 +8,53 @@ import java.time.format.DateTimeFormatter
 
 internal object GoStrings {
 
-    private const val HEX = "0123456789abcdef"
+    private const val HEX_DIGITS = "0123456789abcdef"
+    private const val HEX_RADIX = 16
+    private const val OCTAL_RADIX = 8
+    private const val OCTAL_DIGITS = 3
+    private const val NIBBLE_BITS = 4
+    private const val NIBBLE_MASK = 0xf
+    private const val ASCII_LIMIT = 0x80
+    private const val BMP_LIMIT = 0x10000
+    private const val REPLACEMENT = 0xfffd
+    private const val BYTE_DIGITS = 2
+    private const val SHORT_DIGITS = 4
+    private const val LONG_DIGITS = 8
+
+    private val quoteEscapes: Map<Int, String> =
+        mapOf(
+            '\u0007'.code to "\\a",
+            '\b'.code to "\\b",
+            '\u000c'.code to "\\f",
+            '\n'.code to "\\n",
+            '\r'.code to "\\r",
+            '\t'.code to "\\t",
+            '\u000b'.code to "\\v",
+            '\\'.code to "\\\\",
+            '"'.code to "\\\"",
+        )
+
+    private val unquoteEscapes: Map<Char, Char> =
+        mapOf(
+            'a' to '\u0007',
+            'b' to '\b',
+            'f' to '\u000c',
+            'n' to '\n',
+            'r' to '\r',
+            't' to '\t',
+            'v' to '\u000b',
+            '\\' to '\\',
+            '"' to '"',
+            '\'' to '\'',
+        )
+
+    private val numericEscapeDigits: Map<Char, Int> =
+        mapOf('x' to BYTE_DIGITS, 'u' to SHORT_DIGITS, 'U' to LONG_DIGITS)
+
+    private val jsonEscapes: Map<Char, String> =
+        mapOf('"' to "\\\"", '\\' to "\\\\", '\n' to "\\n", '\r' to "\\r", '\t' to "\\t")
+
+    private val jsonUnicodeEscaped: Set<Char> = setOf('<', '>', '&', '\u2028', '\u2029')
 
     fun quote(value: String): String {
         val out = StringBuilder()
@@ -16,23 +62,11 @@ internal object GoStrings {
         while (i < value.length) {
             val cp = value.codePointAt(i)
             i += Character.charCount(cp)
-            when (cp) {
-                0x07 -> out.append("\\a")
-                0x08 -> out.append("\\b")
-                0x0c -> out.append("\\f")
-                0x0a -> out.append("\\n")
-                0x0d -> out.append("\\r")
-                0x09 -> out.append("\\t")
-                0x0b -> out.append("\\v")
-                '\\'.code -> out.append("\\\\")
-                '"'.code -> out.append("\\\"")
-                else ->
-                    when {
-                        isPrint(cp) -> out.appendCodePoint(cp)
-                        cp < 0x80 -> out.append("\\x").append(hex(cp, 2))
-                        cp < 0x10000 -> out.append("\\u").append(hex(cp, 4))
-                        else -> out.append("\\U").append(hex(cp, 8))
-                    }
+            val escape = quoteEscapes[cp]
+            when {
+                escape != null -> out.append(escape)
+                isPrint(cp) -> out.appendCodePoint(cp)
+                else -> out.append(numericEscape(cp))
             }
         }
         return out.toString()
@@ -43,32 +77,7 @@ internal object GoStrings {
         var i = 0
         while (i < value.length) {
             val c = value[i++]
-            if (c != '\\') {
-                out.append(c)
-                continue
-            }
-            require(i < value.length) { "dangling escape" }
-            when (val e = value[i++]) {
-                'a' -> out.append('\u0007')
-                'b' -> out.append('\b')
-                'f' -> out.append('\u000c')
-                'n' -> out.append('\n')
-                'r' -> out.append('\r')
-                't' -> out.append('\t')
-                'v' -> out.append('\u000b')
-                '\\',
-                '"',
-                '\'' -> out.append(e)
-                'x' ->
-                    out.appendCodePoint(asciiOrReplacement(value.substring(i, i + 2).toInt(16)))
-                        .also { i += 2 }
-                'u' -> out.appendCodePoint(value.substring(i, i + 4).toInt(16)).also { i += 4 }
-                'U' -> out.appendCodePoint(value.substring(i, i + 8).toInt(16)).also { i += 8 }
-                in '0'..'7' ->
-                    out.appendCodePoint(asciiOrReplacement(value.substring(i - 1, i + 2).toInt(8)))
-                        .also { i += 2 }
-                else -> throw IllegalArgumentException("invalid escape \\$e")
-            }
+            if (c == '\\') i = appendEscape(value, i, out) else out.append(c)
         }
         return out.toString()
     }
@@ -76,14 +85,11 @@ internal object GoStrings {
     fun jsonString(value: String): String {
         val out = StringBuilder("\"")
         for (c in value) {
+            val escape = jsonEscapes[c]
             when {
-                c == '"' -> out.append("\\\"")
-                c == '\\' -> out.append("\\\\")
-                c == '\n' -> out.append("\\n")
-                c == '\r' -> out.append("\\r")
-                c == '\t' -> out.append("\\t")
-                c < ' ' || c == '<' || c == '>' || c == '&' || c == ' ' || c == ' ' ->
-                    out.append("\\u").append(hex(c.code, 4))
+                escape != null -> out.append(escape)
+                c < ' ' || c in jsonUnicodeEscaped ->
+                    out.append("\\u").append(hex(c.code, SHORT_DIGITS))
                 else -> out.append(c)
             }
         }
@@ -92,7 +98,39 @@ internal object GoStrings {
 
     fun time(value: OffsetDateTime): String = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value)
 
-    private fun asciiOrReplacement(value: Int): Int = if (value < 0x80) value else 0xfffd
+    private fun numericEscape(cp: Int): String =
+        when {
+            cp < ASCII_LIMIT -> "\\x" + hex(cp, BYTE_DIGITS)
+            cp < BMP_LIMIT -> "\\u" + hex(cp, SHORT_DIGITS)
+            else -> "\\U" + hex(cp, LONG_DIGITS)
+        }
+
+    private fun appendEscape(value: String, start: Int, out: StringBuilder): Int {
+        require(start < value.length) { "dangling escape" }
+        val e = value[start]
+        val simple = unquoteEscapes[e]
+        val digits = numericEscapeDigits[e]
+        return when {
+            simple != null -> {
+                out.append(simple)
+                start + 1
+            }
+            digits != null -> {
+                val code = value.substring(start + 1, start + 1 + digits).toInt(HEX_RADIX)
+                out.appendCodePoint(if (e == 'x') asciiOrReplacement(code) else code)
+                start + 1 + digits
+            }
+            e in '0'..'7' -> {
+                val code = value.substring(start, start + OCTAL_DIGITS).toInt(OCTAL_RADIX)
+                out.appendCodePoint(asciiOrReplacement(code))
+                start + OCTAL_DIGITS
+            }
+            else -> throw IllegalArgumentException("invalid escape \\$e")
+        }
+    }
+
+    private fun asciiOrReplacement(value: Int): Int =
+        if (value < ASCII_LIMIT) value else REPLACEMENT
 
     private fun isPrint(cp: Int): Boolean {
         if (cp == ' '.code) return true
@@ -124,5 +162,8 @@ internal object GoStrings {
     }
 
     private fun hex(value: Int, digits: Int): String =
-        CharArray(digits) { HEX[(value ushr (4 * (digits - 1 - it))) and 0xf] }.concatToString()
+        CharArray(digits) {
+                HEX_DIGITS[(value ushr (NIBBLE_BITS * (digits - 1 - it))) and NIBBLE_MASK]
+            }
+            .concatToString()
 }

@@ -90,6 +90,15 @@ class TreeTest {
         assertTrue("missing $part", text.contains(part))
 
     @Test
+    fun escapesLineAndParagraphSeparatorsLikeGo() {
+        val tree = Tree(listOf(file("a\u2028b\u2029c")))
+
+        assertContains(json(tree), "\\u2028")
+        assertContains(json(tree), "\\u2029")
+        assertEquals(tree.nodes, Tree.decode(tree.encode()).nodes)
+    }
+
+    @Test
     fun trimsTrailingZerosInNanoseconds() {
         val node = file("f").copy(modTime = OffsetDateTime.parse("2026-01-02T03:04:05.500+05:30"))
 
