@@ -3,6 +3,14 @@
 
 package org.prauga.cloud.onboarding
 
+import assertk.assertThat
+import assertk.assertions.contains
+import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isNull
+import assertk.assertions.isTrue
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,10 +20,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.prauga.cloud.core.data.BackupSetupRepository
@@ -63,9 +67,9 @@ class OnboardingViewModelTest {
 
     private val setup = FakeSetup()
     private val store = FakeStore()
-    private val viewModel = OnboardingViewModel(setup, store, Random(7))
+    private val testSubject = OnboardingViewModel(setup, store, Random(7))
     private val state
-        get() = viewModel.state.value
+        get() = testSubject.state.value
 
     @Before
     fun setUp() {
@@ -81,61 +85,59 @@ class OnboardingViewModelTest {
         state.questions.forEach { question ->
             val right = state.words[question.position]
             val word = if (correct) right else question.options.first { it != right }
-            viewModel.onEvent(OnboardingEvent.Answer(question.position, word))
+            testSubject.onEvent(OnboardingEvent.Answer(question.position, word))
         }
     }
 
     @Test
     fun choosingAFolderShowsANewPhrase() {
-        viewModel.onEvent(OnboardingEvent.Continue)
-        viewModel.onEvent(OnboardingEvent.LocationPicked(null))
-        assertEquals(OnboardingStep.LOCATION, state.step)
+        testSubject.onEvent(OnboardingEvent.Continue)
+        testSubject.onEvent(OnboardingEvent.LocationPicked(null))
+        assertThat(state.step).isEqualTo(OnboardingStep.LOCATION)
 
         setup.refuse = true
-        viewModel.onEvent(OnboardingEvent.LocationPicked("content://tree/denied"))
-        assertTrue(state.locationFailed)
+        testSubject.onEvent(OnboardingEvent.LocationPicked("content://tree/denied"))
+        assertThat(state.locationFailed).isTrue()
 
         setup.refuse = false
-        viewModel.onEvent(OnboardingEvent.LocationPicked("content://tree/sandisk"))
-        assertEquals(OnboardingStep.PHRASE, state.step)
-        assertEquals("SanDisk", state.locationName)
-        assertTrue(RecoveryPhrase.isValid(state.words))
+        testSubject.onEvent(OnboardingEvent.LocationPicked("content://tree/sandisk"))
+        assertThat(state.step).isEqualTo(OnboardingStep.PHRASE)
+        assertThat(state.locationName).isEqualTo("SanDisk")
+        assertThat(RecoveryPhrase.isValid(state.words)).isTrue()
     }
 
     @Test
     fun wrongAnswersAreRejectedAndRightOnesSaveThePhrase() {
-        viewModel.onEvent(OnboardingEvent.Continue)
-        viewModel.onEvent(OnboardingEvent.LocationPicked("content://tree/sandisk"))
+        testSubject.onEvent(OnboardingEvent.Continue)
+        testSubject.onEvent(OnboardingEvent.LocationPicked("content://tree/sandisk"))
         val words = state.words
-        viewModel.onEvent(OnboardingEvent.PhraseWritten)
-        assertEquals(3, state.questions.size)
-        state.questions.forEach { assertTrue(words[it.position] in it.options) }
+        testSubject.onEvent(OnboardingEvent.PhraseWritten)
+        assertThat(state.questions).hasSize(3)
+        state.questions.forEach { assertThat(it.options).contains(words[it.position]) }
 
         answer(correct = false)
-        viewModel.onEvent(OnboardingEvent.CheckAnswers)
-        assertTrue(state.answersWrong)
-        assertEquals(OnboardingStep.CONFIRM, state.step)
-        assertNull(store.saved)
-        assertFalse(state.allAnswered)
+        testSubject.onEvent(OnboardingEvent.CheckAnswers)
+        assertThat(state.answersWrong).isTrue()
+        assertThat(state.step).isEqualTo(OnboardingStep.CONFIRM)
+        assertThat(store.saved).isNull()
+        assertThat(state.allAnswered).isFalse()
 
         answer(correct = true)
-        viewModel.onEvent(OnboardingEvent.CheckAnswers)
-        assertEquals(OnboardingStep.CATEGORIES, state.step)
-        assertEquals(words, store.saved)
-        assertTrue(setup.stored.value.phraseConfirmed)
-        assertTrue(state.words.isEmpty())
+        testSubject.onEvent(OnboardingEvent.CheckAnswers)
+        assertThat(state.step).isEqualTo(OnboardingStep.CATEGORIES)
+        assertThat(store.saved).isEqualTo(words)
+        assertThat(setup.stored.value.phraseConfirmed).isTrue()
+        assertThat(state.words).isEmpty()
     }
 
     @Test
     fun chosenCategoriesAreSaved() {
-        viewModel.onEvent(OnboardingEvent.SetCategory(BackupCategory.MESSAGES, enabled = false))
-        viewModel.onEvent(OnboardingEvent.SaveCategories)
+        testSubject.onEvent(OnboardingEvent.SetCategory(BackupCategory.MESSAGES, enabled = false))
+        testSubject.onEvent(OnboardingEvent.SaveCategories)
 
-        assertEquals(OnboardingStep.DONE, state.step)
-        assertEquals(
-            BackupCategory.entries.toSet() - BackupCategory.MESSAGES,
-            setup.stored.value.categories,
-        )
+        assertThat(state.step).isEqualTo(OnboardingStep.DONE)
+        assertThat(setup.stored.value.categories)
+            .isEqualTo(BackupCategory.entries.toSet() - BackupCategory.MESSAGES)
     }
 
     @Test
@@ -144,10 +146,10 @@ class OnboardingViewModelTest {
 
         val questions = ConfirmQuestion.create(words, Random(1))
 
-        assertEquals(3, questions.map { it.position }.distinct().size)
+        assertThat(questions.map { it.position }.distinct()).hasSize(3)
         questions.forEach {
-            assertEquals(4, it.options.distinct().size)
-            assertTrue(words[it.position] in it.options)
+            assertThat(it.options.distinct()).hasSize(4)
+            assertThat(it.options).contains(words[it.position])
         }
     }
 }

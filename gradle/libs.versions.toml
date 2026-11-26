@@ -27,6 +27,8 @@ ktfmt = "0.64"
 spotless = "8.11.0"
 detekt = "2.0.0-alpha.6"
 composeRules = "0.6.8"
+assertk = "0.28.1"
+turbine = "1.2.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -49,6 +51,8 @@ androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref 
 androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "androidxHilt" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+assertk = { group = "com.willowtreeapps.assertk", name = "assertk", version.ref = "assertk" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 pvot-core-ui = { group = "com.prauga.pvot", name = "core-ui", version.ref = "pvot" }
 pvot-design-system = { group = "com.prauga.pvot", name = "design-system", version.ref = "pvot" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

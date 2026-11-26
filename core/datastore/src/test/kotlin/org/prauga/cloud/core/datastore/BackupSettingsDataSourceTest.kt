@@ -4,12 +4,13 @@
 package org.prauga.cloud.core.datastore
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import java.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -24,7 +25,7 @@ class BackupSettingsDataSourceTest {
 
     @get:Rule val folder = TemporaryFolder()
 
-    private fun dataSource(scope: TestScope) =
+    private fun testSubject(scope: TestScope) =
         BackupSettingsDataSource(
             PreferenceDataStoreFactory.create(scope = scope.backgroundScope) {
                 folder.root.resolve("settings.preferences_pb")
@@ -34,51 +35,49 @@ class BackupSettingsDataSourceTest {
     @Test
     fun startsWithDefaults() =
         runTest(UnconfinedTestDispatcher()) {
-            assertEquals(BackupSettings(), dataSource(this).settings.first())
+            assertThat(testSubject(this).settings.first()).isEqualTo(BackupSettings())
         }
 
     @Test
     fun savesWhatTheUserChose() =
         runTest(UnconfinedTestDispatcher()) {
-            val dataSource = dataSource(this)
+            val testSubject = testSubject(this)
             val location =
                 SavedLocation(
                     "content://com.android.externalstorage.documents/tree/1234",
                     "SanDisk",
                 )
 
-            dataSource.setLocation(location)
-            dataSource.setCategories(setOf(BackupCategory.PHOTOS, BackupCategory.CONTACTS))
-            dataSource.setPhraseConfirmed(true)
+            testSubject.setLocation(location)
+            testSubject.setCategories(setOf(BackupCategory.PHOTOS, BackupCategory.CONTACTS))
+            testSubject.setPhraseConfirmed(true)
 
-            assertEquals(
-                BackupSettings(
-                    location,
-                    setOf(BackupCategory.PHOTOS, BackupCategory.CONTACTS),
-                    phraseConfirmed = true,
-                ),
-                dataSource.settings.first(),
-            )
+            assertThat(testSubject.settings.first())
+                .isEqualTo(
+                    BackupSettings(
+                        location,
+                        setOf(BackupCategory.PHOTOS, BackupCategory.CONTACTS),
+                        phraseConfirmed = true,
+                    )
+                )
         }
 
     @Test
     fun remembersTheLastBackup() =
         runTest(UnconfinedTestDispatcher()) {
-            val dataSource = dataSource(this)
+            val testSubject = testSubject(this)
             val first = Instant.parse("2026-11-27T10:00:00Z")
+            val failed = first.plusSeconds(3600)
             val counts = mapOf(BackupCategory.PHOTOS to CategoryCount(9013, 41_000_000_000L))
 
-            dataSource.recordSuccess(first, counts)
-            assertEquals(
-                LastBackup(first, BackupOutcome.SUCCESS),
-                dataSource.settings.first().lastBackup,
-            )
-            assertEquals(counts, dataSource.settings.first().counts)
+            testSubject.recordSuccess(first, counts)
+            val succeeded = testSubject.settings.first()
+            testSubject.recordFailure(failed)
+            val afterFailure = testSubject.settings.first()
 
-            val failed = first.plusSeconds(3600)
-            dataSource.recordFailure(failed)
-            val settings = dataSource.settings.first()
-            assertEquals(LastBackup(failed, BackupOutcome.FAILED), settings.lastBackup)
-            assertEquals(counts, settings.counts)
+            assertThat(succeeded.lastBackup).isEqualTo(LastBackup(first, BackupOutcome.SUCCESS))
+            assertThat(succeeded.counts).isEqualTo(counts)
+            assertThat(afterFailure.lastBackup).isEqualTo(LastBackup(failed, BackupOutcome.FAILED))
+            assertThat(afterFailure.counts).isEqualTo(counts)
         }
 }

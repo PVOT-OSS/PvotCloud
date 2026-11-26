@@ -40,6 +40,8 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.zstd.jni) { artifact { type = "aar" } }
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.assertk)
+    testImplementation(libs.turbine)
     androidTestImplementation(project(":repo"))
     androidTestImplementation(project(":storage"))
     androidTestImplementation(libs.androidx.test.runner)

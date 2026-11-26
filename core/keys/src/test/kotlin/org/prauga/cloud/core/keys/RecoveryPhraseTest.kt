@@ -3,10 +3,11 @@
 
 package org.prauga.cloud.core.keys
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertTrue
+import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.isFalse
+import assertk.assertions.isNotEqualTo
+import assertk.assertions.isTrue
 import org.junit.Test
 
 class RecoveryPhraseTest {
@@ -15,13 +16,13 @@ class RecoveryPhraseTest {
     fun generatesTwelveValidWords() {
         val words = RecoveryPhrase.generate()
 
-        assertEquals(12, words.size)
-        assertTrue(RecoveryPhrase.isValid(words))
+        assertThat(words).hasSize(12)
+        assertThat(RecoveryPhrase.isValid(words)).isTrue()
     }
 
     @Test
     fun everyPhraseIsNew() {
-        assertNotEquals(RecoveryPhrase.generate(), RecoveryPhrase.generate())
+        assertThat(RecoveryPhrase.generate()).isNotEqualTo(RecoveryPhrase.generate())
     }
 
     @Test
@@ -29,7 +30,7 @@ class RecoveryPhraseTest {
         val words =
             "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
 
-        assertTrue(RecoveryPhrase.isValid(words.split(" ")))
+        assertThat(RecoveryPhrase.isValid(words.split(" "))).isTrue()
     }
 
     @Test
@@ -37,8 +38,8 @@ class RecoveryPhraseTest {
         val badChecksum = List(12) { "abandon" }
         val unknownWord = List(11) { "abandon" } + "pvotcloud"
 
-        assertFalse(RecoveryPhrase.isValid(badChecksum))
-        assertFalse(RecoveryPhrase.isValid(unknownWord))
-        assertFalse(RecoveryPhrase.isValid(listOf("abandon")))
+        assertThat(RecoveryPhrase.isValid(badChecksum)).isFalse()
+        assertThat(RecoveryPhrase.isValid(unknownWord)).isFalse()
+        assertThat(RecoveryPhrase.isValid(listOf("abandon"))).isFalse()
     }
 }

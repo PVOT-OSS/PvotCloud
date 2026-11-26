@@ -13,4 +13,5 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.assertk)
 }

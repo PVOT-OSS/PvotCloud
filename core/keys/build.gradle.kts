@@ -12,6 +12,7 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
     implementation(libs.kotlin.bip39)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.assertk)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
 }
