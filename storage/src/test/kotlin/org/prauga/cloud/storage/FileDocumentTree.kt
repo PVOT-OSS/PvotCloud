@@ -45,7 +45,7 @@ class FileDocumentTree(private val root: File) : DocumentTree {
     override fun rename(documentId: String, name: String): String {
         calls++
         val from = file(documentId)
-        val to = unique(from.parentFile, name)
+        val to = unique(checkNotNull(from.parentFile) { "$documentId has no parent" }, name)
         check(from.renameTo(to))
         return id(to)
     }

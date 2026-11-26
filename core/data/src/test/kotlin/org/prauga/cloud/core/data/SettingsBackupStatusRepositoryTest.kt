@@ -11,6 +11,7 @@ import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import assertk.assertions.prop
 import java.time.Instant
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -25,6 +26,7 @@ import org.prauga.cloud.core.model.CategoryCount
 import org.prauga.cloud.core.model.LastBackup
 import org.prauga.cloud.core.model.SavedLocation
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsBackupStatusRepositoryTest {
 
     @get:Rule val folder = TemporaryFolder()

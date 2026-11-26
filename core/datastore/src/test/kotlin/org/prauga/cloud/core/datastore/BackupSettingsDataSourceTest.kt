@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import java.time.Instant
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,6 +22,7 @@ import org.prauga.cloud.core.model.CategoryCount
 import org.prauga.cloud.core.model.LastBackup
 import org.prauga.cloud.core.model.SavedLocation
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class BackupSettingsDataSourceTest {
 
     @get:Rule val folder = TemporaryFolder()
