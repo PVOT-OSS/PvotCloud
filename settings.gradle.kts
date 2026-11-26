@@ -43,4 +43,6 @@ include(":core:keys")
 
 include(":repo")
 
+include(":storage")
+
 includeBuild("PvotLib")
