@@ -45,6 +45,13 @@ private constructor(
     fun readBlob(packId: Id, blob: PackedBlob): ByteArray =
         packReader.readBlob(packId, loadPack(packId), blob)
 
+    fun verifyPack(packId: Id): List<PackedBlob> {
+        val data = loadPack(packId)
+        val blobs = packReader.readHeader(packId, data)
+        blobs.forEach { packReader.readBlob(packId, data, it) }
+        return blobs
+    }
+
     fun saveUnpacked(type: FileType, plaintext: ByteArray): String {
         require(type != FileType.CONFIG && type != FileType.KEY && type != FileType.PACK) {
             "$type is not an unpacked file"

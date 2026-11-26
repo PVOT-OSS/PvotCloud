@@ -123,4 +123,58 @@ class CheckTest {
         assertTrue(problems.isNotEmpty())
         assertTrue(problems.all { it is CheckProblem.MissingBlob && it.type == BlobType.DATA })
     }
+
+    @Test
+    fun readingAllDataVerifiesEveryPack() {
+        backup()
+
+        val result = Check(repository, MasterIndex.load(repository)).run(readDataPercent = 100)
+
+        assertTrue(result.problems.toString(), result.ok)
+        assertEquals(result.packs, result.packsRead)
+    }
+
+    @Test
+    fun damagedDataIsOnlyFoundWhenReadingData() {
+        backup()
+        val index = MasterIndex.load(repository)
+        val dataPack =
+            index.packIds.first { pack ->
+                index.blobsIn(pack).orEmpty().all { it.type == BlobType.DATA }
+            }
+        backend.corrupt(FileType.PACK, dataPack.hex)
+
+        assertTrue(check().ok)
+        val result = Check(repository, MasterIndex.load(repository)).run(readDataPercent = 100)
+        assertEquals(listOf(CheckProblem.DamagedPack(dataPack)), result.problems)
+    }
+
+    @Test
+    fun readDataSamplesTheRequestedShare() {
+        backup()
+        val index = MasterIndex.load(repository)
+
+        val result = Check(repository, index).run(readDataPercent = 50, random = Random(5))
+
+        assertEquals((index.packIds.size + 1) / 2, result.packsRead)
+    }
+
+    @Test
+    fun headerThatDisagreesWithTheIndexIsReported() {
+        backup()
+        val pack =
+            repository
+                .newPackWriter(BlobType.DATA)
+                .apply {
+                    add("first".toByteArray())
+                    add("second".toByteArray())
+                }
+                .finish()
+        repository.savePack(pack)
+        MasterIndex.empty().apply { addPack(pack.id, pack.blobs.take(1)) }.save(repository)
+
+        val result = Check(repository, MasterIndex.load(repository)).run(readDataPercent = 100)
+
+        assertEquals(listOf(CheckProblem.HeaderMismatch(pack.id)), result.problems)
+    }
 }

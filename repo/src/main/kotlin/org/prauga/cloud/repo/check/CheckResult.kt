@@ -7,6 +7,7 @@ data class CheckResult(
     val snapshots: Int,
     val trees: Int,
     val packs: Int,
+    val packsRead: Int,
     val problems: List<CheckProblem>,
 ) {
     val ok: Boolean

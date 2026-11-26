@@ -3,6 +3,8 @@
 
 package org.prauga.cloud.repo.check
 
+import kotlin.math.ceil
+import kotlin.random.Random
 import org.prauga.cloud.repo.FileType
 import org.prauga.cloud.repo.Id
 import org.prauga.cloud.repo.Repository
@@ -14,7 +16,8 @@ import org.prauga.cloud.repo.tree.Tree
 
 class Check(private val repository: Repository, private val index: MasterIndex) {
 
-    fun run(): CheckResult {
+    fun run(readDataPercent: Int = 0, random: Random = Random.Default): CheckResult {
+        require(readDataPercent in 0..100) { "readDataPercent must be 0..100" }
         val problems = mutableListOf<CheckProblem>()
         val stored = repository.list(FileType.PACK).mapNotNull(Id::parseOrNull).toSet()
         val indexed = index.packIds
@@ -35,10 +38,24 @@ class Check(private val repository: Repository, private val index: MasterIndex) 
                 }
             walk(snapshotId, root, visited, damaged, problems)
         }
+        val readable = (indexed intersect stored) - damaged
+        val sample =
+            readable.shuffled(random).take(ceil(readable.size * readDataPercent / 100.0).toInt())
+        for (packId in sample) {
+            try {
+                val header = repository.verifyPack(packId)
+                if (header.toSet() != index.blobsIn(packId).orEmpty().toSet()) {
+                    problems += CheckProblem.HeaderMismatch(packId)
+                }
+            } catch (_: RepositoryException.Corrupted) {
+                problems += CheckProblem.DamagedPack(packId)
+            }
+        }
         return CheckResult(
             snapshots = snapshotIds.size,
             trees = visited.size,
             packs = stored.size,
+            packsRead = sample.size,
             problems = problems.distinct(),
         )
     }
