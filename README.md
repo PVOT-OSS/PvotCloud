@@ -9,9 +9,9 @@ Encrypted, verifiable backups of an Android phone to storage you choose: a folde
 SD card or a USB drive. Backups use the [restic](https://restic.net) repository format, so they can
 be checked and restored on a computer with `restic` and your recovery phrase.
 
-Work in progress. Today the app sets up a backup location and a 12-word recovery phrase, and backs
-up photos and videos on demand. Restore, contacts, calendars, scheduling and the SDK for other apps
-are next.
+Work in progress. Today the app sets up a backup location and a 12-word recovery phrase, backs up
+photos and videos on demand, and backs up and restores apps that add the Pvot Cloud SDK.
+Restoring photos, contacts, calendars and scheduling are next.
 
 - **Private:** nothing leaves the phone. Version 1 has no network permission (see
   [ADR 0003](docs/adr/0003-keep-version-1-local-only.md)).
@@ -51,6 +51,9 @@ the SAF backend run with `./gradlew connectedDebugAndroidTest`.
 | `:repo` | the backup engine (pure JVM) |
 | `:storage` | the engine's backend on the Storage Access Framework |
 | `:sources` | what gets backed up (MediaStore today) |
+| `:sdk:api`, `:sdk:agent` | the open SDK other apps add (Apache-2.0); see [sdk/README.md](sdk/README.md) |
+| `:sdk-host` | the provider side of the SDK in Pvot Cloud |
+| `samples/*` | apps that use each kind of SDK backup |
 
 Decisions behind the structure are in [docs/adr](docs/adr).
 

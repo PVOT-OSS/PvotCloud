@@ -36,6 +36,15 @@ phrase that only you hold.**
 The folder you choose is shared with the app through Android's folder picker; the app cannot see
 other folders.
 
+## Other apps' data
+
+Apps can add the open Pvot Cloud SDK so their data can be backed up. Pvot Cloud lists those apps,
+and backs one up only after you turn it on and the app itself asks you to allow it. An app's data,
+including any saved sign-ins it chooses to export, goes into the same encrypted backup as the rest
+of your data and is restored only to the same app signed by the same developer. Pvot Cloud keeps
+the list of apps you turned on and the result of each app's last backup on your phone. Turning an
+app off stops future backups of it; the app can also withdraw its permission.
+
 ## Backups
 
 Your recovery phrase is excluded from Android's own device backup. The app's settings may be
