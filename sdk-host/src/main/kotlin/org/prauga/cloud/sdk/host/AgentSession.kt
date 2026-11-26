@@ -98,8 +98,10 @@ internal constructor(
                 }
             }
         }
+        var linked = false
         try {
             binder.linkToDeath(death, 0)
+            linked = true
             var streamError: String? = null
             val bytes =
                 try {
@@ -119,11 +121,7 @@ internal constructor(
             TransferResult(ResultCode.INTERNAL, STOPPED, 0)
         } finally {
             watchdog.cancel()
-            try {
-                binder.unlinkToDeath(death, 0)
-            } catch (_: NoSuchElementException) {
-                Unit
-            }
+            if (linked) binder.unlinkToDeath(death, 0)
             handOff(theirs)
             ours.close()
         }
