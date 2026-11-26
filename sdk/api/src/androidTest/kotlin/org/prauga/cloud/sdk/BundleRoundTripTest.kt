@@ -27,6 +27,7 @@ class BundleRoundTripTest {
                     ),
                 needsRestart = true,
                 reEnrolOnRestore = listOf("Fingerprint unlock"),
+                callerTrusted = true,
             )
 
         assertThat(AgentInfo.fromBundle(parcel(testSubject.toBundle()))).isEqualTo(testSubject)

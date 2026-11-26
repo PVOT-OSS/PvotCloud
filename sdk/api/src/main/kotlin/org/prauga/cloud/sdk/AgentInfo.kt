@@ -13,6 +13,7 @@ data class AgentInfo(
     val needsRestart: Boolean,
     val reEnrolOnRestore: List<String> = emptyList(),
     val skippedReason: String? = null,
+    val callerTrusted: Boolean = false,
 ) {
 
     fun toBundle(): Bundle =
@@ -23,6 +24,7 @@ data class AgentInfo(
             putBoolean(NEEDS_RESTART, needsRestart)
             putStringArrayList(RE_ENROL, ArrayList(reEnrolOnRestore))
             putString(SKIPPED_REASON, skippedReason)
+            putBoolean(CALLER_TRUSTED, callerTrusted)
         }
 
     companion object {
@@ -32,6 +34,7 @@ data class AgentInfo(
         private const val NEEDS_RESTART = "needsRestart"
         private const val RE_ENROL = "reEnrolOnRestore"
         private const val SKIPPED_REASON = "skippedReason"
+        private const val CALLER_TRUSTED = "callerTrusted"
 
         fun fromBundle(bundle: Bundle): AgentInfo =
             AgentInfo(
@@ -44,6 +47,7 @@ data class AgentInfo(
                 needsRestart = bundle.getBoolean(NEEDS_RESTART),
                 reEnrolOnRestore = bundle.getStringArrayList(RE_ENROL).orEmpty(),
                 skippedReason = bundle.getString(SKIPPED_REASON),
+                callerTrusted = bundle.getBoolean(CALLER_TRUSTED),
             )
     }
 }

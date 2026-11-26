@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <string name="pvot_cloud_sdk_trust_title">Allow %1$s to back up this app?</string>
+    <string name="pvot_cloud_sdk_trust_message">%1$s will be able to copy %2$s\'s data, including saved sign-ins, into its encrypted backups and put it back when you restore.\n\nOnly allow apps you trust.\n\nCertificate SHA-256:\n%3$s</string>
+    <string name="pvot_cloud_sdk_trust_allow">Allow</string>
+    <string name="pvot_cloud_sdk_trust_deny">Don\'t allow</string>
+</resources>
