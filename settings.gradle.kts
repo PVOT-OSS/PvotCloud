@@ -37,6 +37,8 @@ include(":core:model")
 
 include(":core:data")
 
+include(":core:datastore")
+
 include(":repo")
 
 includeBuild("PvotLib")
