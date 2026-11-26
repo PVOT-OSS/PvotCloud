@@ -9,4 +9,6 @@ data class BackupSettings(
     val phraseConfirmed: Boolean = false,
     val lastBackup: LastBackup? = null,
     val counts: Map<BackupCategory, CategoryCount> = emptyMap(),
+    val includedApps: Set<IncludedApp> = emptySet(),
+    val appRecords: Map<String, AppRecord> = emptyMap(),
 )

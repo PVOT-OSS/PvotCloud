@@ -15,10 +15,12 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.prauga.cloud.core.model.AppRecord
 import org.prauga.cloud.core.model.BackupCategory
 import org.prauga.cloud.core.model.BackupOutcome
 import org.prauga.cloud.core.model.BackupSettings
 import org.prauga.cloud.core.model.CategoryCount
+import org.prauga.cloud.core.model.IncludedApp
 import org.prauga.cloud.core.model.LastBackup
 import org.prauga.cloud.core.model.SavedLocation
 
@@ -81,5 +83,29 @@ class BackupSettingsDataSourceTest {
             assertThat(succeeded.counts).isEqualTo(counts)
             assertThat(afterFailure.lastBackup).isEqualTo(LastBackup(failed, BackupOutcome.FAILED))
             assertThat(afterFailure.counts).isEqualTo(counts)
+        }
+
+    @Test
+    fun remembersIncludedAppsAndTheirLastBackup() =
+        runTest(UnconfinedTestDispatcher()) {
+            val testSubject = testSubject(this)
+            val finished = Instant.parse("2026-11-27T10:00:00Z")
+
+            testSubject.include(IncludedApp("org.example.notes", "ab12"))
+            testSubject.include(IncludedApp("org.example.vault", "cd34"))
+            testSubject.include(IncludedApp("org.example.notes", "ef56"))
+            testSubject.exclude("org.example.vault")
+            testSubject.recordApp(AppRecord("org.example.notes", finished, BackupOutcome.SUCCESS))
+            testSubject.recordApp(
+                AppRecord("org.example.vault", finished, BackupOutcome.FAILED, "the app stopped")
+            )
+            val settings = testSubject.settings.first()
+
+            assertThat(settings.includedApps)
+                .isEqualTo(setOf(IncludedApp("org.example.notes", "ef56")))
+            assertThat(settings.appRecords["org.example.notes"])
+                .isEqualTo(AppRecord("org.example.notes", finished, BackupOutcome.SUCCESS))
+            assertThat(settings.appRecords["org.example.vault"]?.detail)
+                .isEqualTo("the app stopped")
         }
 }

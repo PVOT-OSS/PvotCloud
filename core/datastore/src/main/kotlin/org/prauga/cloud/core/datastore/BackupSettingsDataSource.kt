@@ -15,10 +15,12 @@ import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.prauga.cloud.core.model.AppRecord
 import org.prauga.cloud.core.model.BackupCategory
 import org.prauga.cloud.core.model.BackupOutcome
 import org.prauga.cloud.core.model.BackupSettings
 import org.prauga.cloud.core.model.CategoryCount
+import org.prauga.cloud.core.model.IncludedApp
 import org.prauga.cloud.core.model.LastBackup
 import org.prauga.cloud.core.model.SavedLocation
 
@@ -45,6 +47,9 @@ class BackupSettingsDataSource @Inject constructor(private val dataStore: DataSt
                             category to CategoryCount(items, preferences[bytesKey(category)] ?: 0L)
                         }
                         .toMap(),
+                includedApps =
+                    preferences[INCLUDED_APPS].orEmpty().mapNotNull(::includedApp).toSet(),
+                appRecords = appRecords(preferences),
             )
         }
 
@@ -82,12 +87,74 @@ class BackupSettingsDataSource @Inject constructor(private val dataStore: DataSt
         }
     }
 
+    suspend fun include(app: IncludedApp) {
+        dataStore.edit { preferences ->
+            val others =
+                preferences[INCLUDED_APPS].orEmpty().filterNot {
+                    it.startsWith(app.packageName + SEPARATOR)
+                }
+            preferences[INCLUDED_APPS] =
+                (others + (app.packageName + SEPARATOR + app.certificate)).toSet()
+        }
+    }
+
+    suspend fun exclude(packageName: String) {
+        dataStore.edit { preferences ->
+            preferences[INCLUDED_APPS] =
+                preferences[INCLUDED_APPS]
+                    .orEmpty()
+                    .filterNot { it.startsWith(packageName + SEPARATOR) }
+                    .toSet()
+        }
+    }
+
+    suspend fun recordApp(record: AppRecord) {
+        dataStore.edit { preferences ->
+            preferences[appAtKey(record.packageName)] = record.finishedAt.toEpochMilli()
+            preferences[appOutcomeKey(record.packageName)] = record.outcome.name
+            val detail = record.detail
+            if (detail == null) preferences.remove(appDetailKey(record.packageName))
+            else preferences[appDetailKey(record.packageName)] = detail
+        }
+    }
+
     suspend fun recordFailure(finishedAt: Instant) {
         dataStore.edit {
             it[LAST_BACKUP_AT] = finishedAt.toEpochMilli()
             it[LAST_BACKUP_OUTCOME] = BackupOutcome.FAILED.name
         }
     }
+
+    private fun includedApp(stored: String): IncludedApp? {
+        val packageName = stored.substringBefore(SEPARATOR, "")
+        val certificate = stored.substringAfter(SEPARATOR, "")
+        return if (packageName.isEmpty() || certificate.isEmpty()) null
+        else IncludedApp(packageName, certificate)
+    }
+
+    private fun appRecords(preferences: Preferences): Map<String, AppRecord> =
+        preferences
+            .asMap()
+            .keys
+            .map { it.name }
+            .filter { it.startsWith(APP_AT) }
+            .mapNotNull { name ->
+                val packageName = name.removePrefix(APP_AT)
+                val at = preferences[appAtKey(packageName)]
+                val outcome =
+                    BackupOutcome.entries.firstOrNull {
+                        it.name == preferences[appOutcomeKey(packageName)]
+                    }
+                if (at == null || outcome == null) null
+                else
+                    AppRecord(
+                        packageName,
+                        Instant.ofEpochMilli(at),
+                        outcome,
+                        preferences[appDetailKey(packageName)],
+                    )
+            }
+            .associateBy { it.packageName }
 
     private fun lastBackup(preferences: Preferences): LastBackup? {
         val at = preferences[LAST_BACKUP_AT]
@@ -104,6 +171,15 @@ class BackupSettingsDataSource @Inject constructor(private val dataStore: DataSt
         val PHRASE_CONFIRMED = booleanPreferencesKey("phrase_confirmed")
         val LAST_BACKUP_AT = longPreferencesKey("last_backup_at")
         val LAST_BACKUP_OUTCOME = stringPreferencesKey("last_backup_outcome")
+        val INCLUDED_APPS = stringSetPreferencesKey("included_apps")
+        const val SEPARATOR = "|"
+        const val APP_AT = "app_at_"
+
+        fun appAtKey(packageName: String) = longPreferencesKey(APP_AT + packageName)
+
+        fun appOutcomeKey(packageName: String) = stringPreferencesKey("app_outcome_$packageName")
+
+        fun appDetailKey(packageName: String) = stringPreferencesKey("app_detail_$packageName")
 
         fun itemsKey(category: BackupCategory) =
             intPreferencesKey("items_${category.name.lowercase()}")
