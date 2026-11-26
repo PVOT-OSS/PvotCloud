@@ -7,4 +7,6 @@ data class BackupSettings(
     val location: SavedLocation? = null,
     val categories: Set<BackupCategory> = BackupCategory.entries.toSet(),
     val phraseConfirmed: Boolean = false,
+    val lastBackup: LastBackup? = null,
+    val counts: Map<BackupCategory, CategoryCount> = emptyMap(),
 )

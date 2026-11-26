@@ -23,8 +23,15 @@ class SettingsBackupStatusRepository @Inject constructor(dataSource: BackupSetti
                     categories =
                         BackupCategory.entries
                             .filter { it in settings.categories }
-                            .map { CategoryStatus(it, items = null, bytes = null) },
+                            .map {
+                                CategoryStatus(
+                                    it,
+                                    settings.counts[it]?.items,
+                                    settings.counts[it]?.bytes,
+                                )
+                            },
                     recoveryPhraseSaved = settings.phraseConfirmed,
+                    lastBackup = settings.lastBackup,
                 )
         }
 }
