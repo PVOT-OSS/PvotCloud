@@ -6,4 +6,5 @@ package org.prauga.cloud.core.model
 enum class BackupOutcome {
     SUCCESS,
     FAILED,
+    SKIPPED,
 }

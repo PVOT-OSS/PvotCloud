@@ -158,8 +158,11 @@ constructor(
                     packageName = app.packageName,
                     finishedAt = finished,
                     outcome =
-                        if (app.code == ResultCode.OK) BackupOutcome.SUCCESS
-                        else BackupOutcome.FAILED,
+                        when (app.code) {
+                            ResultCode.OK -> BackupOutcome.SUCCESS
+                            ResultCode.SKIPPED -> BackupOutcome.SKIPPED
+                            else -> BackupOutcome.FAILED
+                        },
                     detail = app.detail,
                 )
             )

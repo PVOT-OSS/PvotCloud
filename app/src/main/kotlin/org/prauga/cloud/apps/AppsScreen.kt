@@ -156,8 +156,9 @@ private fun status(app: ConnectedApp): String {
     return when {
         !app.included -> stringResource(R.string.apps_not_included)
         last == null -> stringResource(R.string.apps_waiting)
-        last.outcome == BackupOutcome.SUCCESS ->
-            stringResource(R.string.apps_backed_up, relative(last.finishedAt.toEpochMilli()))
+        last.outcome == BackupOutcome.SUCCESS -> backedUp(last.finishedAt.toEpochMilli())
+        last.outcome == BackupOutcome.SKIPPED ->
+            stringResource(R.string.apps_skipped_because, detail.orEmpty())
         detail != null -> stringResource(R.string.apps_failed_because, detail)
         else -> stringResource(R.string.apps_failed)
     }
@@ -191,6 +192,14 @@ private fun RestoreDialog(
         PvotDialogAction(label = stringResource(R.string.apps_ok), onClick = onDismiss)
     }
 }
+
+@Composable
+private fun backedUp(millis: Long): String =
+    if (System.currentTimeMillis() - millis < DateUtils.MINUTE_IN_MILLIS) {
+        stringResource(R.string.apps_backed_up_just_now)
+    } else {
+        stringResource(R.string.apps_backed_up, relative(millis))
+    }
 
 private fun relative(millis: Long): String =
     DateUtils.getRelativeTimeSpanString(

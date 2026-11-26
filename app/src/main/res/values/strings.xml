@@ -95,6 +95,8 @@
     <string name="apps_not_included">Not backed up</string>
     <string name="apps_waiting">Included in the next backup</string>
     <string name="apps_backed_up">Backed up %1$s</string>
+    <string name="apps_backed_up_just_now">Backed up just now</string>
+    <string name="apps_skipped_because">Skipped: %1$s</string>
     <string name="apps_failed">Last backup failed</string>
     <string name="apps_failed_because">Last backup failed: %1$s</string>
     <string name="apps_restore">Restore from backup</string>
