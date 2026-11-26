@@ -3,4 +3,8 @@
 
 package org.prauga.cloud.core.model
 
-data class BackupLocation(val name: String, val usedBytes: Long, val totalBytes: Long)
+data class BackupLocation(
+    val name: String,
+    val usedBytes: Long? = null,
+    val totalBytes: Long? = null,
+)

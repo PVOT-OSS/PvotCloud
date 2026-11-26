@@ -5,14 +5,28 @@ package org.prauga.cloud.core.data
 
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class DataModule {
     @Binds
     abstract fun backupStatusRepository(
-        repository: InMemoryBackupStatusRepository
+        repository: SettingsBackupStatusRepository
     ): BackupStatusRepository
+
+    @Binds
+    abstract fun backupSetupRepository(
+        repository: DefaultBackupSetupRepository
+    ): BackupSetupRepository
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal object DispatchersModule {
+    @Provides @IoDispatcher fun io(): CoroutineDispatcher = Dispatchers.IO
 }

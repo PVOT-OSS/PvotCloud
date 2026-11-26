@@ -197,22 +197,29 @@ private fun StorageCard(overview: BackupOverview) {
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
+                val used = location?.usedBytes
+                val total = location?.totalBytes
                 Text(
                     text =
-                        if (location == null) stringResource(R.string.home_storage_none)
-                        else
-                            stringResource(
-                                R.string.home_storage_used,
-                                Formatter.formatShortFileSize(context, location.usedBytes),
-                                Formatter.formatShortFileSize(context, location.totalBytes),
-                            ),
+                        when {
+                            location == null -> stringResource(R.string.home_storage_none)
+                            used != null && total != null ->
+                                stringResource(
+                                    R.string.home_storage_used,
+                                    Formatter.formatShortFileSize(context, used),
+                                    Formatter.formatShortFileSize(context, total),
+                                )
+                            else -> location.name
+                        },
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            val used = location?.usedBytes
+            val total = location?.totalBytes
             val share =
-                if (location == null || location.totalBytes <= 0) 0f
-                else (location.usedBytes.toFloat() / location.totalBytes).coerceIn(0f, 1f)
+                if (used == null || total == null || total <= 0) 0f
+                else (used.toFloat() / total).coerceIn(0f, 1f)
             PvotProportionBar(segments = listOf(share), modifier = Modifier.fillMaxWidth())
         }
     }
