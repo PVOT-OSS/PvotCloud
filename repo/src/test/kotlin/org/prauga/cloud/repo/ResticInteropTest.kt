@@ -7,12 +7,14 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.readBytes
 import kotlin.io.path.writeText
 import kotlin.random.Random
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -20,10 +22,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.prauga.cloud.repo.backup.Backup
 import org.prauga.cloud.repo.crypto.KdfParams
 import org.prauga.cloud.repo.index.MasterIndex
 import org.prauga.cloud.repo.pack.BlobType
 import org.prauga.cloud.repo.snapshot.Snapshots
+import org.prauga.cloud.repo.source.LocalDirectory
 import org.prauga.cloud.repo.tree.Tree
 
 class ResticInteropTest {
@@ -144,6 +148,48 @@ class ResticInteropTest {
         assertEquals(2, resticConfig.getValue("version").jsonPrimitive.content.toInt())
         assertTrue(restic(repo, "key", "list").contains("phone"))
         restic(repo, "check")
+    }
+
+    @Test
+    fun resticVerifiesAndRestoresOurBackup() {
+        val repo = temp.newFolder("pvot-backup").toPath()
+        val repository =
+            Repository.create(
+                FileSystemBackend(repo),
+                compressor,
+                PASSWORD,
+                "phone",
+                "user",
+                KdfParams(16384, 8, 1),
+            )
+        RepositoryLayout.directories().forEach { Files.createDirectories(repo.resolve(it)) }
+        val source = temp.newFolder("phone").toPath()
+        val photos = Files.createDirectories(source.resolve("DCIM/Camera"))
+        photos
+            .resolve("IMG_0001.jpg")
+            .toFile()
+            .writeBytes(ByteArray(6 * 1024 * 1024).also(Random(11)::nextBytes))
+        source.resolve("say \"hi\" <&> é.txt").writeText("tricky name")
+        source.resolve("empty").writeText("")
+        Files.createSymbolicLink(source.resolve("latest"), Path.of("DCIM/Camera/IMG_0001.jpg"))
+
+        Backup(repository, MasterIndex.empty()).run(LocalDirectory(source), "phone", listOf("/"))
+
+        restic(repo, "check", "--read-data")
+        assertTrue(restic(repo, "snapshots").contains("phone"))
+        val target = temp.newFolder("restored").toPath()
+        restic(repo, "restore", "latest", "--target", target.toString())
+        for (relative in listOf("DCIM/Camera/IMG_0001.jpg", "say \"hi\" <&> é.txt", "empty")) {
+            assertArrayEquals(
+                relative,
+                source.resolve(relative).readBytes(),
+                target.resolve(relative).readBytes(),
+            )
+        }
+        assertEquals(
+            Path.of("DCIM/Camera/IMG_0001.jpg"),
+            Files.readSymbolicLink(target.resolve("latest")),
+        )
     }
 
     private fun restic(repo: Path, vararg args: String): String {
