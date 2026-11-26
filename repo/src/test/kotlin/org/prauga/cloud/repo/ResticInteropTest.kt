@@ -22,6 +22,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.prauga.cloud.repo.crypto.KdfParams
 import org.prauga.cloud.repo.index.MasterIndex
+import org.prauga.cloud.repo.pack.BlobType
+import org.prauga.cloud.repo.snapshot.Snapshots
+import org.prauga.cloud.repo.tree.Tree
 
 class ResticInteropTest {
 
@@ -88,6 +91,37 @@ class ResticInteropTest {
         }
         assertEquals(index.size, blobs)
         assertTrue(index.size > 2)
+    }
+
+    @Test
+    fun reencodesResticTreesByteForByte() {
+        val repo = temp.newFolder("restic-trees").toPath()
+        restic(repo, "init")
+        val source = temp.newFolder("tree source").toPath()
+        source.resolve("plain.txt").writeText("plain")
+        source.resolve("say \"hi\" <&> é 😀.txt").writeText("tricky name")
+        source.resolve("empty").writeText("")
+        Files.createDirectories(source.resolve("DCIM/Camera"))
+            .resolve("IMG_0001.jpg")
+            .writeText("jpeg")
+        Files.createSymbolicLink(source.resolve("link"), Path.of("plain.txt"))
+        restic(repo, "backup", source.toString())
+
+        val repository = Repository.open(FileSystemBackend(repo), compressor, PASSWORD)
+        val index = MasterIndex.load(repository)
+        val snapshot = Snapshots(repository).list().single().snapshot
+
+        val pending = ArrayDeque(listOf(snapshot.tree))
+        var trees = 0
+        while (pending.isNotEmpty()) {
+            val id = pending.removeFirst()
+            val location = checkNotNull(index.lookup(BlobType.TREE, id)) { "tree $id missing" }
+            val tree = Tree.decode(repository.readBlob(location.packId, location.blob))
+            assertEquals(id, Id.hash(tree.encode()))
+            tree.nodes.mapNotNullTo(pending) { it.subtree }
+            trees++
+        }
+        assertTrue(trees >= 3)
     }
 
     @Test
