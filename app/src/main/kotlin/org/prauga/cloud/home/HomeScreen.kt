@@ -44,7 +44,11 @@ import org.prauga.cloud.core.model.RunProgress
 import org.prauga.cloud.onboarding.OnboardingFlow
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    onOpenApps: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var settingUp by rememberSaveable { mutableStateOf(false) }
     val askThenBackUp =
@@ -56,6 +60,7 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltVie
         onRetry = { viewModel.onEvent(HomeEvent.Retry) },
         onSetUp = { settingUp = true },
         onBackUpNow = { askThenBackUp.launch(backupPermissions()) },
+        onOpenApps = onOpenApps,
         modifier = modifier,
     )
     OnboardingFlow(visible = settingUp, onClose = { settingUp = false })
@@ -67,6 +72,7 @@ private fun HomeContent(
     onRetry: () -> Unit,
     onSetUp: () -> Unit,
     onBackUpNow: () -> Unit,
+    onOpenApps: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (state) {
@@ -84,6 +90,7 @@ private fun HomeContent(
                 running = state.data.running,
                 onSetUp = onSetUp,
                 onBackUpNow = onBackUpNow,
+                onOpenApps = onOpenApps,
                 modifier = modifier,
             )
     }
@@ -95,6 +102,7 @@ private fun Overview(
     running: RunProgress?,
     onSetUp: () -> Unit,
     onBackUpNow: () -> Unit,
+    onOpenApps: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val setUp = overview.location != null && overview.recoveryPhraseSaved
@@ -109,7 +117,7 @@ private fun Overview(
         }
         item { ContentsGrid(overview) }
         item { SecurityGroup(overview, Modifier.fillMaxWidth()) }
-        item { SettingsGroup(overview, Modifier.fillMaxWidth()) }
+        item { SettingsGroup(overview, onOpenApps, Modifier.fillMaxWidth()) }
     }
 }
 
@@ -171,7 +179,11 @@ private fun SecurityGroup(overview: BackupOverview, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun SettingsGroup(overview: BackupOverview, modifier: Modifier = Modifier) {
+private fun SettingsGroup(
+    overview: BackupOverview,
+    onOpenApps: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     PvotListGroup(modifier) {
         item {
             ValueRow(
@@ -203,6 +215,7 @@ private fun SettingsGroup(overview: BackupOverview, modifier: Modifier = Modifie
                         overview.connectedApps,
                         overview.connectedApps,
                     ),
+                onClick = onOpenApps,
             )
         }
     }

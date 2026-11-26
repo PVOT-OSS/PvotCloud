@@ -90,4 +90,20 @@
     <string name="category_messages">Messages</string>
     <string name="category_apps">Apps</string>
     <string name="category_folders">Folders</string>
+    <string name="apps_title">Apps using Pvot Cloud</string>
+    <string name="apps_empty">No apps use Pvot Cloud yet. Apps that add the Pvot Cloud SDK show up here, and you choose which ones to back up.</string>
+    <string name="apps_not_included">Not backed up</string>
+    <string name="apps_waiting">Included in the next backup</string>
+    <string name="apps_backed_up">Backed up %1$s</string>
+    <string name="apps_failed">Last backup failed</string>
+    <string name="apps_failed_because">Last backup failed: %1$s</string>
+    <string name="apps_restore">Restore from backup</string>
+    <string name="apps_restoring">Restoring…</string>
+    <string name="apps_restore_title">Restore</string>
+    <string name="apps_restored">%1$s\'s data is back. The app may restart.</string>
+    <string name="apps_restore_not_approved">%1$s has not allowed Pvot Cloud to restore its data.</string>
+    <string name="apps_restore_no_backup">There is no backup of %1$s yet.</string>
+    <string name="apps_restore_not_set_up">Set up backups first.</string>
+    <string name="apps_restore_failed">%1$s could not be restored. %2$s</string>
+    <string name="apps_ok">OK</string>
 </resources>

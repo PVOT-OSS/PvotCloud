@@ -149,9 +149,11 @@ internal fun ValueRow(
     @StringRes title: Int,
     value: String,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     PvotListRow(
         modifier = modifier,
+        onClick = onClick,
         title = stringResource(title),
         leading = {
             Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(24.dp))
