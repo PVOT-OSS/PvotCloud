@@ -49,4 +49,6 @@ include(":sources")
 
 include(":sdk:api")
 
+include(":sdk:agent")
+
 includeBuild("PvotLib")
