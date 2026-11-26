@@ -15,18 +15,22 @@ class ZstdCompressor(private val level: Int = DEFAULT_LEVEL) : Compressor {
     override fun compress(data: ByteArray): ByteArray = Zstd.compress(data, level)
 
     override fun decompress(data: ByteArray, maxSize: Int): ByteArray {
-        val declared = Zstd.getFrameContentSize(data)
-        if (declared > maxSize)
-            throw CompressionException("frame declares $declared bytes, limit is $maxSize")
+        val declared = declaredSize(data, maxSize)
         return try {
             if (declared >= 0) Zstd.decompress(data, declared.toInt())
             else decompressStream(data, maxSize)
         } catch (e: ZstdException) {
-            throw CompressionException("invalid zstd frame", e)
+            throw CompressionException(INVALID_FRAME, e)
         } catch (e: IOException) {
-            throw CompressionException("invalid zstd frame", e)
+            throw CompressionException(INVALID_FRAME, e)
         }
     }
+
+    private fun declaredSize(data: ByteArray, maxSize: Int): Long =
+        Zstd.getFrameContentSize(data).also { declared ->
+            if (declared > maxSize)
+                throw CompressionException("frame declares $declared bytes, limit is $maxSize")
+        }
 
     private fun decompressStream(data: ByteArray, maxSize: Int): ByteArray {
         val out = ByteArrayOutputStream()
@@ -46,5 +50,6 @@ class ZstdCompressor(private val level: Int = DEFAULT_LEVEL) : Compressor {
     private companion object {
         const val DEFAULT_LEVEL = 3
         const val BUFFER_SIZE = 64 * 1024
+        const val INVALID_FRAME = "invalid zstd frame"
     }
 }

@@ -35,14 +35,21 @@ class CryptoKey(encryptionKey: ByteArray, macK: ByteArray, macR: ByteArray) {
     }
 
     fun open(sealed: ByteArray): ByteArray {
-        if (sealed.size < OVERHEAD) throw AuthenticationException()
+        if (!isAuthentic(sealed)) throw AuthenticationException()
         val nonce = sealed.copyOfRange(0, NONCE_SIZE)
-        if (nonce.all { it == ZERO }) throw AuthenticationException()
+        return ctr(Cipher.DECRYPT_MODE, nonce).doFinal(sealed, NONCE_SIZE, sealed.size - OVERHEAD)
+    }
+
+    private fun isAuthentic(sealed: ByteArray): Boolean {
+        if (sealed.size < OVERHEAD) return false
+        val nonce = sealed.copyOfRange(0, NONCE_SIZE)
         val length = sealed.size - OVERHEAD
-        val expected = Poly1305Aes.mac(sealed, NONCE_SIZE, length, nonce, macK, macR)
         val actual = sealed.copyOfRange(NONCE_SIZE + length, sealed.size)
-        if (!MessageDigest.isEqual(expected, actual)) throw AuthenticationException()
-        return ctr(Cipher.DECRYPT_MODE, nonce).doFinal(sealed, NONCE_SIZE, length)
+        return nonce.any { it != ZERO } &&
+            MessageDigest.isEqual(
+                Poly1305Aes.mac(sealed, NONCE_SIZE, length, nonce, macK, macR),
+                actual,
+            )
     }
 
     internal fun encryptionKeyCopy(): ByteArray = encryptionKey.copyOf()

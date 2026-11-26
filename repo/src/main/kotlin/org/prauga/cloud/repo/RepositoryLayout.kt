@@ -6,6 +6,7 @@ package org.prauga.cloud.repo
 object RepositoryLayout {
 
     const val CONFIG_NAME = "config"
+    private const val PACK_FOLDERS = 256
 
     fun path(type: FileType, name: String): String =
         when (type) {
@@ -19,5 +20,5 @@ object RepositoryLayout {
     fun directories(): List<String> =
         listOf(FileType.KEY, FileType.INDEX, FileType.SNAPSHOT, FileType.LOCK).map {
             it.directory
-        } + (0 until 256).map { "${FileType.PACK.directory}/%02x".format(it) }
+        } + (0 until PACK_FOLDERS).map { "${FileType.PACK.directory}/%02x".format(it) }
 }

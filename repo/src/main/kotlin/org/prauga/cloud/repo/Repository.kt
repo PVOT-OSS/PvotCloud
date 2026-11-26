@@ -68,8 +68,11 @@ private constructor(
 
     fun loadUnpacked(type: FileType, name: String): ByteArray {
         val sealed = backend.load(type, name)
-        if (sha256(sealed).toHex() != name) throw RepositoryException.Corrupted(type, name)
-        val plaintext = masterKey.open(sealed)
+        val plaintext = if (sha256(sealed).toHex() == name) masterKey.open(sealed) else null
+        return plaintext?.let(::decodeUnpacked) ?: throw RepositoryException.Corrupted(type, name)
+    }
+
+    private fun decodeUnpacked(plaintext: ByteArray): ByteArray? {
         if (config.version < 2 || plaintext.isEmpty()) return plaintext
         return when (plaintext[0]) {
             JSON_OBJECT,
@@ -81,9 +84,9 @@ private constructor(
                         MAX_UNPACKED_SIZE,
                     )
                 } catch (_: CompressionException) {
-                    throw RepositoryException.Corrupted(type, name)
+                    null
                 }
-            else -> throw RepositoryException.Corrupted(type, name)
+            else -> null
         }
     }
 
@@ -157,33 +160,40 @@ private constructor(
         }
 
         private fun unlockKey(keyFileBytes: ByteArray, password: String): CryptoKey? {
-            val keyFile =
-                try {
-                    ResticJson.decodeFromString(KeyFile.serializer(), keyFileBytes.decodeToString())
-                } catch (_: SerializationException) {
-                    return null
-                }
-            if (keyFile.kdf != Kdf.NAME) return null
+            val keyFile = decodeKeyFile(keyFileBytes)?.takeIf { it.kdf == Kdf.NAME } ?: return null
             val userKey =
                 Kdf.deriveUserKey(
                     password,
                     keyFile.salt.decodeBase64(),
                     KdfParams(keyFile.n, keyFile.r, keyFile.p),
                 )
-            val masterJson =
-                try {
-                    userKey.open(keyFile.data.decodeBase64())
-                } catch (_: AuthenticationException) {
-                    return null
-                }
-            val master =
-                ResticJson.decodeFromString(MasterKeyJson.serializer(), masterJson.decodeToString())
-            return CryptoKey(
-                encryptionKey = master.encrypt.decodeBase64(),
-                macK = master.mac.k.decodeBase64(),
-                macR = master.mac.r.decodeBase64(),
-            )
+            return openOrNull(userKey, keyFile.data.decodeBase64())?.let { masterJson ->
+                val master =
+                    ResticJson.decodeFromString(
+                        MasterKeyJson.serializer(),
+                        masterJson.decodeToString(),
+                    )
+                CryptoKey(
+                    encryptionKey = master.encrypt.decodeBase64(),
+                    macK = master.mac.k.decodeBase64(),
+                    macR = master.mac.r.decodeBase64(),
+                )
+            }
         }
+
+        private fun decodeKeyFile(bytes: ByteArray): KeyFile? =
+            try {
+                ResticJson.decodeFromString(KeyFile.serializer(), bytes.decodeToString())
+            } catch (_: SerializationException) {
+                null
+            }
+
+        private fun openOrNull(key: CryptoKey, sealed: ByteArray): ByteArray? =
+            try {
+                key.open(sealed)
+            } catch (_: AuthenticationException) {
+                null
+            }
 
         private fun saveKey(
             backend: Backend,

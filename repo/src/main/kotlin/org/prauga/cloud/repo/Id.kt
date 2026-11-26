@@ -11,12 +11,13 @@ value class Id(val hex: String) {
     }
 
     internal fun bytes(): ByteArray =
-        ByteArray(LENGTH / 2) { hex.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+        ByteArray(LENGTH / 2) { hex.substring(it * 2, it * 2 + 2).toInt(HEX_RADIX).toByte() }
 
     override fun toString(): String = hex
 
     companion object {
         private const val LENGTH = 64
+        private const val HEX_RADIX = 16
 
         fun hash(data: ByteArray): Id = Id(sha256(data).toHex())
 
