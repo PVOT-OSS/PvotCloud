@@ -7,9 +7,7 @@ package org.prauga.cloud.repo
 value class Id(val hex: String) {
 
     init {
-        require(hex.length == LENGTH && hex.all { it in '0'..'9' || it in 'a'..'f' }) {
-            "invalid id $hex"
-        }
+        require(isValid(hex)) { "invalid id $hex" }
     }
 
     internal fun bytes(): ByteArray =
@@ -21,6 +19,11 @@ value class Id(val hex: String) {
         private const val LENGTH = 64
 
         fun hash(data: ByteArray): Id = Id(sha256(data).toHex())
+
+        fun parseOrNull(hex: String): Id? = if (isValid(hex)) Id(hex) else null
+
+        private fun isValid(hex: String): Boolean =
+            hex.length == LENGTH && hex.all { it in '0'..'9' || it in 'a'..'f' }
 
         internal fun of(digest: ByteArray): Id = Id(digest.toHex())
     }

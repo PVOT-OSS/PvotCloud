@@ -13,4 +13,6 @@ data class BackupResult(
     val bytes: Long,
     val newBlobs: Int,
     val newPacks: Int,
+    val recoveredPacks: Int,
+    val damagedPacks: List<Id>,
 )

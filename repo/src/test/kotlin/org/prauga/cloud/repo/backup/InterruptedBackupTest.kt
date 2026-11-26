@@ -9,8 +9,10 @@ import java.time.OffsetDateTime
 import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import org.prauga.cloud.repo.FileType
+import org.prauga.cloud.repo.Id
 import org.prauga.cloud.repo.InMemoryBackend
 import org.prauga.cloud.repo.Repository
 import org.prauga.cloud.repo.ZstdCompressor
@@ -43,21 +45,27 @@ class InterruptedBackupTest {
         override fun open(): InputStream = throw IOException("storage removed")
     }
 
-    private fun run(files: List<SourceFile>): BackupResult {
+    private fun run(files: List<SourceFile>, checkpointPacks: Int = 1): BackupResult {
         val reopened = Repository.open(backend, ZstdCompressor(), "phrase")
         return Backup(
                 reopened,
                 MasterIndex.load(reopened),
                 packSize = 64 * 1024,
-                checkpointPacks = 1,
+                checkpointPacks = checkpointPacks,
             )
             .run(MemoryDirectory("DCIM", files), "phone", listOf("/DCIM"))
     }
 
+    private fun runInterrupted(checkpointPacks: Int) {
+        try {
+            run(photos.take(8) + FailingFile("IMG_0009.jpg"), checkpointPacks)
+            fail("the backup should stop at the failing file")
+        } catch (_: IOException) {}
+    }
+
     @Test
     fun resumedBackupDoesNotUploadCheckpointedData() {
-        val interrupted = photos.take(8) + FailingFile("IMG_0009.jpg")
-        runCatching { run(interrupted) }.also { assertTrue(it.exceptionOrNull() is IOException) }
+        runInterrupted(checkpointPacks = 1)
 
         assertEquals(0, repository.list(FileType.SNAPSHOT).size)
         assertTrue(repository.list(FileType.INDEX).isNotEmpty())
@@ -65,6 +73,32 @@ class InterruptedBackupTest {
         val resumed = run(photos)
 
         assertEquals(4 + 1, resumed.newBlobs)
+        assertEquals(1, Snapshots(repository).list().size)
+    }
+
+    @Test
+    fun packsSavedBeforeACheckpointAreRecovered() {
+        runInterrupted(checkpointPacks = 100)
+
+        assertEquals(0, repository.list(FileType.INDEX).size)
+        assertEquals(8, repository.list(FileType.PACK).size)
+
+        val resumed = run(photos)
+
+        assertEquals(8, resumed.recoveredPacks)
+        assertEquals(4 + 1, resumed.newBlobs)
+        assertEquals(emptyList<Id>(), resumed.damagedPacks)
+    }
+
+    @Test
+    fun damagedOrphanPackIsReportedAndSkipped() {
+        val garbage = Random(99).nextBytes(500)
+        backend.save(FileType.PACK, Id.hash(garbage).hex, garbage)
+
+        val result = run(photos)
+
+        assertEquals(listOf(Id.hash(garbage)), result.damagedPacks)
+        assertEquals(0, result.recoveredPacks)
         assertEquals(1, Snapshots(repository).list().size)
     }
 }

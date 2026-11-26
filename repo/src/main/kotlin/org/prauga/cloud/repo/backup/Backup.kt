@@ -42,6 +42,7 @@ class Backup(
         programVersion: String? = null,
     ): BackupResult {
         val start = OffsetDateTime.now(clock)
+        val orphans = index.recoverOrphans(repository)
         val store = BlobStore(repository, index, packSize, checkpointPacks)
         val chunker = Chunker(repository.chunkerPolynomial)
         val counters = Counters()
@@ -67,6 +68,8 @@ class Backup(
             bytes = counters.bytes,
             newBlobs = store.newBlobs,
             newPacks = store.newPacks,
+            recoveredPacks = orphans.recovered.size,
+            damagedPacks = orphans.damaged,
         )
     }
 

@@ -18,6 +18,7 @@ class MasterIndex private constructor() {
 
     private val entries = HashMap<Key, BlobLocation>()
     private val pending = LinkedHashMap<Id, List<PackedBlob>>()
+    private val packs = HashSet<Id>()
 
     val size: Int
         get() = entries.size
@@ -59,7 +60,24 @@ class MasterIndex private constructor() {
         return names
     }
 
+    fun recoverOrphans(repository: Repository): OrphanRecovery {
+        val recovered = mutableListOf<Id>()
+        val damaged = mutableListOf<Id>()
+        for (name in repository.list(FileType.PACK)) {
+            val id = Id.parseOrNull(name) ?: continue
+            if (id in packs) continue
+            try {
+                addPack(id, repository.readPackHeader(id))
+                recovered += id
+            } catch (_: RepositoryException.Corrupted) {
+                damaged += id
+            }
+        }
+        return OrphanRecovery(recovered, damaged)
+    }
+
     private fun index(packId: Id, blobs: List<PackedBlob>) {
+        packs += packId
         for (blob in blobs) entries.putIfAbsent(Key(blob.type, blob.id), BlobLocation(packId, blob))
     }
 
