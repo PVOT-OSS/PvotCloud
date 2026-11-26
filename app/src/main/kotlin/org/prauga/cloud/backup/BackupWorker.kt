@@ -36,23 +36,22 @@ constructor(
 
     override suspend fun doWork(): Result {
         setForeground(foregroundInfo(null))
-        val result =
-            runner.run { progress ->
-                if (isStopped) throw CancellationException("backup stopped")
-                val now = System.currentTimeMillis()
-                if (now - lastUpdate >= UPDATE_INTERVAL_MS) {
-                    lastUpdate = now
-                    setProgressAsync(
-                        workDataOf(
-                            FILES to progress.files,
-                            TOTAL_FILES to progress.totalFiles,
-                            BYTES to progress.bytes,
-                            TOTAL_BYTES to progress.totalBytes,
-                        )
+        val result = runner.run { progress ->
+            if (isStopped) throw CancellationException("backup stopped")
+            val now = System.currentTimeMillis()
+            if (now - lastUpdate >= UPDATE_INTERVAL_MS) {
+                lastUpdate = now
+                setProgressAsync(
+                    workDataOf(
+                        FILES to progress.files,
+                        TOTAL_FILES to progress.totalFiles,
+                        BYTES to progress.bytes,
+                        TOTAL_BYTES to progress.totalBytes,
                     )
-                    setForegroundAsync(foregroundInfo(progress))
-                }
+                )
+                setForegroundAsync(foregroundInfo(progress))
             }
+        }
         return when (result) {
             is RunResult.Success -> Result.success()
             is RunResult.Failure -> Result.failure(workDataOf(FAILURE to result.reason.name))

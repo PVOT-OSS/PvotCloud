@@ -52,15 +52,14 @@ class SafEngineOnDeviceTest {
     ) : SourceDirectory {
         override val modTime: OffsetDateTime = time
 
-        override fun children(): List<SourceEntry> =
-            entries.map { (fileName, data) ->
-                object : SourceFile {
-                    override val name: String = fileName
-                    override val modTime: OffsetDateTime = time
+        override fun children(): List<SourceEntry> = entries.map { (fileName, data) ->
+            object : SourceFile {
+                override val name: String = fileName
+                override val modTime: OffsetDateTime = time
 
-                    override fun open(): InputStream = ByteArrayInputStream(data)
-                }
+                override fun open(): InputStream = ByteArrayInputStream(data)
             }
+        }
     }
 
     @Before

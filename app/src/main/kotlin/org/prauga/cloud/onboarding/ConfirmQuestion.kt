@@ -13,10 +13,9 @@ data class ConfirmQuestion(val position: Int, val options: List<String>) {
 
         fun create(words: List<String>, random: Random): List<ConfirmQuestion> =
             words.indices.shuffled(random).take(QUESTIONS).sorted().map { position ->
-                val wrong =
-                    words.filterIndexed { index, word ->
-                        index != position && word != words[position]
-                    }
+                val wrong = words.filterIndexed { index, word ->
+                    index != position && word != words[position]
+                }
                 val options =
                     (wrong.distinct().shuffled(random).take(OPTIONS - 1) + words[position])
                         .shuffled(random)

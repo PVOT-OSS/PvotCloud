@@ -14,6 +14,5 @@ sealed class RepositoryException(message: String) : Exception(message) {
 
     class MissingBlob(id: Id) : RepositoryException("blob $id is not in the index")
 
-    class Unsupported(version: Int) :
-        RepositoryException("unsupported repository version $version")
+    class Unsupported(version: Int) : RepositoryException("unsupported repository version $version")
 }

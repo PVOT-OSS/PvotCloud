@@ -22,5 +22,7 @@ internal object DataStoreModule {
     @Provides
     @Singleton
     fun backupSettings(@ApplicationContext context: Context): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("backup_settings") }
+        PreferenceDataStoreFactory.create {
+            context.preferencesDataStoreFile("backup_settings")
+        }
 }
