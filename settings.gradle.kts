@@ -37,4 +37,6 @@ include(":core:model")
 
 include(":core:data")
 
+include(":repo")
+
 providers.gradleProperty("pvotLibDir").orNull?.let { includeBuild(it) }
