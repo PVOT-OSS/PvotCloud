@@ -3,7 +3,10 @@
 
 plugins { alias(libs.plugins.pvot.android.library) }
 
-android { namespace = "org.prauga.cloud.sdk.agent" }
+android {
+    namespace = "org.prauga.cloud.sdk.agent"
+    defaultConfig { consumerProguardFiles("consumer-rules.pro") }
+}
 
 dependencies {
     api(project(":sdk:api"))
