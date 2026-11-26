@@ -121,6 +121,20 @@ class BackupTest {
         assertEquals(3, second.newBlobs)
     }
 
+    @Test
+    fun reportsProgressUpToTheTotals() {
+        val reports = mutableListOf<BackupProgress>()
+        val reopened = Repository.open(backend, ZstdCompressor(), PASSWORD)
+
+        val result =
+            Backup(reopened, MasterIndex.load(reopened))
+                .run(source(), "phone", listOf("/"), progress = reports::add)
+
+        assertEquals(BackupProgress(result.files, result.bytes), reports.last())
+        assertTrue(reports.zipWithNext().all { (a, b) -> b.bytes >= a.bytes && b.files >= a.files })
+        assertTrue(reports.size > result.files)
+    }
+
     private companion object {
         const val PASSWORD = "phrase"
     }

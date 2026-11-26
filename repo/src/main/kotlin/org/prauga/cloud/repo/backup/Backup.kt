@@ -27,7 +27,7 @@ class Backup(
     private val clock: Clock = Clock.systemUTC(),
 ) {
 
-    private class Counters {
+    private class Counters(val onProgress: (BackupProgress) -> Unit) {
         var files = 0
         var directories = 0
         var bytes = 0L
@@ -40,12 +40,13 @@ class Backup(
         tags: List<String> = emptyList(),
         parent: Id? = null,
         programVersion: String? = null,
+        progress: (BackupProgress) -> Unit = {},
     ): BackupResult {
         val start = OffsetDateTime.now(clock)
         val orphans = index.recoverOrphans(repository)
         val store = BlobStore(repository, index, packSize, checkpointPacks)
         val chunker = Chunker(repository.chunkerPolynomial)
-        val counters = Counters()
+        val counters = Counters(progress)
         val tree = saveDirectory(root, store, chunker, counters)
         store.flush()
         if (index.hasPending) index.save(repository)
@@ -119,12 +120,17 @@ class Backup(
                     .chunks(input)
                     .map { chunk ->
                         size += chunk.data.size
-                        store.save(BlobType.DATA, chunk.data)
+                        store.save(BlobType.DATA, chunk.data).also {
+                            counters.onProgress(
+                                BackupProgress(counters.files, counters.bytes + size)
+                            )
+                        }
                     }
                     .toList()
             }
         counters.files++
         counters.bytes += size
+        counters.onProgress(BackupProgress(counters.files, counters.bytes))
         return Node(
             name = file.name,
             type = NodeType.FILE,
