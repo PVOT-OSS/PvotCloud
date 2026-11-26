@@ -23,6 +23,11 @@ internal abstract class DataModule {
     abstract fun backupSetupRepository(
         repository: DefaultBackupSetupRepository
     ): BackupSetupRepository
+
+    @Binds
+    abstract fun connectedAppsRepository(
+        repository: DefaultConnectedAppsRepository
+    ): ConnectedAppsRepository
 }
 
 @Module

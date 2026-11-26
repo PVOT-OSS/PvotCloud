@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import java.io.IOException
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -18,8 +19,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.prauga.cloud.core.datastore.BackupSettingsDataSource
 import org.prauga.cloud.core.keys.RecoveryPhraseStore
+import org.prauga.cloud.core.model.AppRecord
 import org.prauga.cloud.core.model.BackupCategory
 import org.prauga.cloud.core.model.BackupFailure
+import org.prauga.cloud.core.model.BackupOutcome
+import org.prauga.cloud.core.model.BackupSettings
 import org.prauga.cloud.core.model.CategoryCount
 import org.prauga.cloud.core.model.RunProgress
 import org.prauga.cloud.core.model.RunResult
@@ -32,6 +36,9 @@ import org.prauga.cloud.repo.backup.Backup
 import org.prauga.cloud.repo.index.MasterIndex
 import org.prauga.cloud.repo.source.SourceDirectory
 import org.prauga.cloud.repo.source.SourceEntry
+import org.prauga.cloud.sdk.ResultCode
+import org.prauga.cloud.sdk.host.AppBackup
+import org.prauga.cloud.sdk.host.AppResult
 import org.prauga.cloud.sources.MediaStoreSource
 import org.prauga.cloud.storage.SafBackend
 import org.prauga.cloud.storage.SafDocumentTree
@@ -42,6 +49,7 @@ constructor(
     @ApplicationContext private val context: Context,
     private val settings: BackupSettingsDataSource,
     private val phraseStore: RecoveryPhraseStore,
+    private val appBackup: AppBackup,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
 
@@ -58,7 +66,7 @@ constructor(
                     return@withContext backUp(
                         Uri.parse(location.uri),
                         words.joinToString(" "),
-                        current.categories,
+                        current,
                         onProgress,
                     )
                 } catch (_: SecurityException) {
@@ -77,9 +85,10 @@ constructor(
     private suspend fun backUp(
         treeUri: Uri,
         password: String,
-        categories: Set<BackupCategory>,
+        current: BackupSettings,
         onProgress: (RunProgress) -> Unit,
     ): RunResult {
+        val categories = current.categories
         val backend = SafBackend(SafDocumentTree(context.contentResolver, treeUri))
         val compressor = ZstdCompressor()
         val repository =
@@ -102,6 +111,7 @@ constructor(
             roots += media.tree(items)
             counts[BackupCategory.PHOTOS] = CategoryCount(items.size, items.sumOf { it.size })
         }
+        val appResults = exportApps(current, roots, counts)
         val totalFiles = counts.values.sumOf { it.items }
         val totalBytes = counts.values.sumOf { it.bytes }
         val result =
@@ -116,8 +126,44 @@ constructor(
                         onProgress(RunProgress(it.files, totalFiles, it.bytes, totalBytes))
                     },
                 )
-        settings.recordSuccess(Instant.now(), counts)
+        val finished = Instant.now()
+        settings.recordSuccess(finished, counts)
+        recordApps(appResults, finished)
+        File(context.cacheDir, APP_EXPORT_DIR).deleteRecursively()
         return RunResult.Success(result.files, result.bytes)
+    }
+
+    private suspend fun exportApps(
+        current: BackupSettings,
+        roots: MutableList<SourceEntry>,
+        counts: MutableMap<BackupCategory, CategoryCount>,
+    ): List<AppResult> {
+        if (BackupCategory.APPS !in current.categories || current.includedApps.isEmpty())
+            return emptyList()
+        val export =
+            appBackup.export(
+                current.includedApps.associate { it.packageName to it.certificate },
+                File(context.cacheDir, APP_EXPORT_DIR),
+            )
+        export.root?.let(roots::add)
+        val exported = export.results.filter { it.code == ResultCode.OK }
+        counts[BackupCategory.APPS] = CategoryCount(exported.size, exported.sumOf { it.bytes })
+        return export.results
+    }
+
+    private suspend fun recordApps(results: List<AppResult>, finished: Instant) {
+        results.forEach { app ->
+            settings.recordApp(
+                AppRecord(
+                    packageName = app.packageName,
+                    finishedAt = finished,
+                    outcome =
+                        if (app.code == ResultCode.OK) BackupOutcome.SUCCESS
+                        else BackupOutcome.FAILED,
+                    detail = app.detail,
+                )
+            )
+        }
     }
 
     private fun canReadMedia(): Boolean {
@@ -143,5 +189,6 @@ constructor(
     private companion object {
         const val TAG = "pvot-cloud"
         const val USERNAME = "pvot-cloud"
+        const val APP_EXPORT_DIR = "sdk-export"
     }
 }

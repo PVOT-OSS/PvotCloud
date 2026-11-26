@@ -23,6 +23,7 @@ import org.prauga.cloud.core.model.BackupCategory
 import org.prauga.cloud.core.model.BackupOutcome
 import org.prauga.cloud.core.model.BackupOverview
 import org.prauga.cloud.core.model.CategoryCount
+import org.prauga.cloud.core.model.IncludedApp
 import org.prauga.cloud.core.model.LastBackup
 import org.prauga.cloud.core.model.SavedLocation
 
@@ -47,6 +48,7 @@ class SettingsBackupStatusRepositoryTest {
             dataSource.setLocation(SavedLocation("content://tree/1", "SanDisk"))
             dataSource.setCategories(setOf(BackupCategory.CONTACTS, BackupCategory.PHOTOS))
             dataSource.setPhraseConfirmed(true)
+            dataSource.include(IncludedApp("org.example.notes", "ab12"))
             val after = testSubject.overview.first()
             dataSource.recordSuccess(
                 finished,
@@ -59,6 +61,7 @@ class SettingsBackupStatusRepositoryTest {
             assertThat(before.categories.map { it.category }).isEqualTo(BackupCategory.entries)
             assertThat(after.location?.name).isEqualTo("SanDisk")
             assertThat(after.recoveryPhraseSaved).isTrue()
+            assertThat(after.connectedApps).isEqualTo(1)
             assertThat(after.categories.map { it.category })
                 .isEqualTo(listOf(BackupCategory.PHOTOS, BackupCategory.CONTACTS))
             assertThat(backedUp)

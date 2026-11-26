@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":core:keys"))
     implementation(project(":storage"))
     implementation(project(":sources"))
+    implementation(project(":sdk-host"))
     api(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.assertk)

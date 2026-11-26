@@ -32,6 +32,7 @@ class SettingsBackupStatusRepository @Inject constructor(dataSource: BackupSetti
                             },
                     recoveryPhraseSaved = settings.phraseConfirmed,
                     lastBackup = settings.lastBackup,
+                    connectedApps = settings.includedApps.size,
                 )
         }
 }
