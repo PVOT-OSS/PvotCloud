@@ -18,7 +18,7 @@ class MasterIndex private constructor() {
 
     private val entries = HashMap<Key, BlobLocation>()
     private val pending = LinkedHashMap<Id, List<PackedBlob>>()
-    private val packs = HashSet<Id>()
+    private val packs = HashMap<Id, List<PackedBlob>>()
 
     val size: Int
         get() = entries.size
@@ -28,6 +28,11 @@ class MasterIndex private constructor() {
 
     val pendingPacks: Int
         get() = pending.size
+
+    val packIds: Set<Id>
+        get() = packs.keys.toSet()
+
+    fun blobsIn(packId: Id): List<PackedBlob>? = packs[packId]
 
     fun contains(type: BlobType, id: Id): Boolean = Key(type, id) in entries
 
@@ -77,7 +82,7 @@ class MasterIndex private constructor() {
     }
 
     private fun index(packId: Id, blobs: List<PackedBlob>) {
-        packs += packId
+        packs[packId] = blobs
         for (blob in blobs) entries.putIfAbsent(Key(blob.type, blob.id), BlobLocation(packId, blob))
     }
 
