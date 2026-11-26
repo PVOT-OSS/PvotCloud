@@ -107,6 +107,16 @@ class RepositoryTest {
         repository.readPackHeader(pack.id)
     }
 
+    @Test
+    fun layoutPutsPacksInTwoCharacterFolders() {
+        val id = "ab" + "0".repeat(62)
+
+        assertEquals("data/ab/$id", RepositoryLayout.path(FileType.PACK, id))
+        assertEquals("data", RepositoryLayout.directory(FileType.PACK))
+        assertEquals("config", RepositoryLayout.path(FileType.CONFIG, RepositoryLayout.CONFIG_NAME))
+        assertEquals("snapshots", RepositoryLayout.directory(FileType.SNAPSHOT))
+    }
+
     private companion object {
         const val PASSWORD =
             "abandon ability able about above absent absorb abstract absurd abuse access accident"

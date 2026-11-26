@@ -14,6 +14,8 @@ object RepositoryLayout {
             else -> "${type.directory}/$name"
         }
 
+    fun directory(type: FileType): String = type.directory
+
     fun directories(): List<String> =
         listOf(FileType.KEY, FileType.INDEX, FileType.SNAPSHOT, FileType.LOCK).map {
             it.directory
