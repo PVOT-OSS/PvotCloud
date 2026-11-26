@@ -68,9 +68,9 @@ class MasterIndex private constructor() {
     fun recoverOrphans(repository: Repository): OrphanRecovery {
         val recovered = mutableListOf<Id>()
         val damaged = mutableListOf<Id>()
-        for (name in repository.list(FileType.PACK)) {
-            val id = Id.parseOrNull(name) ?: continue
-            if (id in packs) continue
+        val orphans =
+            repository.list(FileType.PACK).mapNotNull(Id::parseOrNull).filterNot { it in packs }
+        for (id in orphans) {
             try {
                 addPack(id, repository.readPackHeader(id))
                 recovered += id

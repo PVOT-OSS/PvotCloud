@@ -17,7 +17,7 @@ import org.prauga.cloud.repo.tree.Tree
 class Check(private val repository: Repository, private val index: MasterIndex) {
 
     fun run(readDataPercent: Int = 0, random: Random = Random.Default): CheckResult {
-        require(readDataPercent in 0..100) { "readDataPercent must be 0..100" }
+        require(readDataPercent in 0..FULL_PERCENT) { "readDataPercent must be 0..$FULL_PERCENT" }
         val problems = mutableListOf<CheckProblem>()
         val stored = repository.list(FileType.PACK).mapNotNull(Id::parseOrNull).toSet()
         val indexed = index.packIds
@@ -40,7 +40,9 @@ class Check(private val repository: Repository, private val index: MasterIndex) 
         }
         val readable = (indexed intersect stored) - damaged
         val sample =
-            readable.shuffled(random).take(ceil(readable.size * readDataPercent / 100.0).toInt())
+            readable
+                .shuffled(random)
+                .take(ceil(readable.size * readDataPercent / FULL_PERCENT.toDouble()).toInt())
         for (packId in sample) {
             try {
                 val header = repository.verifyPack(packId)
@@ -70,29 +72,46 @@ class Check(private val repository: Repository, private val index: MasterIndex) 
         val pending = ArrayDeque(listOf(root))
         while (pending.isNotEmpty()) {
             val treeId = pending.removeFirst()
-            if (!visited.add(treeId)) continue
-            val location = index.lookup(BlobType.TREE, treeId)
-            if (location == null) {
-                problems += CheckProblem.MissingBlob(snapshotId, BlobType.TREE, treeId)
-                continue
+            if (visited.add(treeId)) {
+                val tree = loadTree(snapshotId, treeId, damaged, problems) ?: continue
+                for (node in tree.nodes) {
+                    node.subtree?.let(pending::addLast)
+                    node.content
+                        .orEmpty()
+                        .filterNot { index.contains(BlobType.DATA, it) }
+                        .forEach {
+                            problems += CheckProblem.MissingBlob(snapshotId, BlobType.DATA, it)
+                        }
+                }
             }
-            if (location.packId in damaged) continue
-            val tree =
+        }
+    }
+
+    private fun loadTree(
+        snapshotId: Id,
+        treeId: Id,
+        damaged: MutableSet<Id>,
+        problems: MutableList<CheckProblem>,
+    ): Tree? {
+        val location = index.lookup(BlobType.TREE, treeId)
+        return when {
+            location == null -> {
+                problems += CheckProblem.MissingBlob(snapshotId, BlobType.TREE, treeId)
+                null
+            }
+            location.packId in damaged -> null
+            else ->
                 try {
                     Tree.decode(repository.readBlob(location.packId, location.blob))
                 } catch (_: RepositoryException.Corrupted) {
                     damaged += location.packId
                     problems += CheckProblem.DamagedPack(location.packId)
-                    continue
+                    null
                 }
-            for (node in tree.nodes) {
-                node.subtree?.let(pending::addLast)
-                for (blob in node.content.orEmpty()) {
-                    if (!index.contains(BlobType.DATA, blob)) {
-                        problems += CheckProblem.MissingBlob(snapshotId, BlobType.DATA, blob)
-                    }
-                }
-            }
         }
+    }
+
+    private companion object {
+        const val FULL_PERCENT = 100
     }
 }

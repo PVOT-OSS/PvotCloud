@@ -5,7 +5,6 @@ package org.prauga.cloud.repo.snapshot
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeParseException
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.prauga.cloud.repo.FileType
 import org.prauga.cloud.repo.Id
@@ -47,8 +46,6 @@ class Snapshots(private val repository: Repository) {
                 original = json.original?.let(::Id),
                 programVersion = json.programVersion,
             )
-        } catch (_: SerializationException) {
-            throw RepositoryException.Corrupted(FileType.SNAPSHOT, id.hex)
         } catch (_: DateTimeParseException) {
             throw RepositoryException.Corrupted(FileType.SNAPSHOT, id.hex)
         } catch (_: IllegalArgumentException) {

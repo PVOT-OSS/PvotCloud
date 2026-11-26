@@ -19,17 +19,20 @@ internal class ContentStream(
 
     override fun read(): Int {
         if (!fill()) return -1
-        return current[position++].toInt() and 0xff
+        return current[position++].toInt() and BYTE_MASK
     }
 
-    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-        if (length == 0) return 0
-        if (!fill()) return -1
-        val count = minOf(length, current.size - position)
-        current.copyInto(buffer, offset, position, position + count)
-        position += count
-        return count
-    }
+    override fun read(buffer: ByteArray, offset: Int, length: Int): Int =
+        when {
+            length == 0 -> 0
+            !fill() -> -1
+            else -> {
+                val count = minOf(length, current.size - position)
+                current.copyInto(buffer, offset, position, position + count)
+                position += count
+                count
+            }
+        }
 
     private fun fill(): Boolean {
         while (position >= current.size) {
@@ -43,5 +46,9 @@ internal class ContentStream(
             total += current.size
         }
         return true
+    }
+
+    private companion object {
+        const val BYTE_MASK = 0xff
     }
 }
