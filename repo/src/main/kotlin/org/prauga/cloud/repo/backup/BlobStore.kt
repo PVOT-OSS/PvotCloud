@@ -13,6 +13,7 @@ class BlobStore(
     private val repository: Repository,
     private val index: MasterIndex,
     private val packSize: Int = DEFAULT_PACK_SIZE,
+    private val checkpointPacks: Int = DEFAULT_CHECKPOINT_PACKS,
 ) {
 
     private val writers = mutableMapOf<BlobType, PackWriter>()
@@ -46,9 +47,11 @@ class BlobStore(
         index.addPack(pack.id, pack.blobs)
         unsaved.remove(type)
         newPacks++
+        if (index.pendingPacks >= checkpointPacks) index.save(repository)
     }
 
     companion object {
         const val DEFAULT_PACK_SIZE = 16 * 1024 * 1024
+        const val DEFAULT_CHECKPOINT_PACKS = 4
     }
 }

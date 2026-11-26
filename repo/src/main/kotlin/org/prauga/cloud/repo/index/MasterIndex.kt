@@ -25,6 +25,9 @@ class MasterIndex private constructor() {
     val hasPending: Boolean
         get() = pending.isNotEmpty()
 
+    val pendingPacks: Int
+        get() = pending.size
+
     fun contains(type: BlobType, id: Id): Boolean = Key(type, id) in entries
 
     fun lookup(type: BlobType, id: Id): BlobLocation? = entries[Key(type, id)]

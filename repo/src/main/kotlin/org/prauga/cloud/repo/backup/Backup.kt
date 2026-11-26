@@ -23,6 +23,7 @@ class Backup(
     private val repository: Repository,
     private val index: MasterIndex,
     private val packSize: Int = BlobStore.DEFAULT_PACK_SIZE,
+    private val checkpointPacks: Int = BlobStore.DEFAULT_CHECKPOINT_PACKS,
     private val clock: Clock = Clock.systemUTC(),
 ) {
 
@@ -41,7 +42,7 @@ class Backup(
         programVersion: String? = null,
     ): BackupResult {
         val start = OffsetDateTime.now(clock)
-        val store = BlobStore(repository, index, packSize)
+        val store = BlobStore(repository, index, packSize, checkpointPacks)
         val chunker = Chunker(repository.chunkerPolynomial)
         val counters = Counters()
         val tree = saveDirectory(root, store, chunker, counters)
