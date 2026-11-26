@@ -47,4 +47,6 @@ include(":storage")
 
 include(":sources")
 
+include(":sdk:api")
+
 includeBuild("PvotLib")
