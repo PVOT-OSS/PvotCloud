@@ -12,6 +12,11 @@ import org.prauga.cloud.repo.crypto.AuthenticationException
 import org.prauga.cloud.repo.crypto.CryptoKey
 import org.prauga.cloud.repo.crypto.Kdf
 import org.prauga.cloud.repo.crypto.KdfParams
+import org.prauga.cloud.repo.pack.BlobType
+import org.prauga.cloud.repo.pack.Pack
+import org.prauga.cloud.repo.pack.PackReader
+import org.prauga.cloud.repo.pack.PackWriter
+import org.prauga.cloud.repo.pack.PackedBlob
 
 class Repository
 private constructor(
@@ -24,6 +29,21 @@ private constructor(
 
     val chunkerPolynomial: Polynomial
         get() = Polynomial.parse(config.chunkerPolynomial)
+
+    private val packReader = PackReader(masterKey, compressor)
+
+    fun newPackWriter(type: BlobType): PackWriter = PackWriter(type, masterKey, compressor, random)
+
+    fun savePack(pack: Pack) {
+        if (!backend.exists(FileType.PACK, pack.id.hex))
+            backend.save(FileType.PACK, pack.id.hex, pack.data)
+    }
+
+    fun readPackHeader(packId: Id): List<PackedBlob> =
+        packReader.readHeader(packId, loadPack(packId))
+
+    fun readBlob(packId: Id, blob: PackedBlob): ByteArray =
+        packReader.readBlob(packId, loadPack(packId), blob)
 
     fun saveUnpacked(type: FileType, plaintext: ByteArray): String {
         require(type != FileType.CONFIG && type != FileType.KEY && type != FileType.PACK) {
@@ -60,6 +80,12 @@ private constructor(
     }
 
     fun list(type: FileType): List<String> = backend.list(type)
+
+    private fun loadPack(id: Id): ByteArray {
+        val data = backend.load(FileType.PACK, id.hex)
+        if (Id.hash(data) != id) throw RepositoryException.Corrupted(FileType.PACK, id.hex)
+        return data
+    }
 
     companion object {
         const val VERSION = 2

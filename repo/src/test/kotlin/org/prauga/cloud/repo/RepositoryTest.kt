@@ -7,6 +7,7 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.prauga.cloud.repo.crypto.KdfParams
+import org.prauga.cloud.repo.pack.BlobType
 
 class RepositoryTest {
 
@@ -75,6 +76,35 @@ class RepositoryTest {
         backend.corrupt(FileType.SNAPSHOT, name)
 
         repository.loadUnpacked(FileType.SNAPSHOT, name)
+    }
+
+    @Test
+    fun storedPackReadsBack() {
+        val backend = InMemoryBackend()
+        val repository = create(backend)
+        val writer = repository.newPackWriter(BlobType.DATA)
+        val plaintext = "a chunk of a photo".toByteArray()
+        writer.add(plaintext)
+        val pack = writer.finish()
+
+        repository.savePack(pack)
+        val reopened = Repository.open(backend, compressor, PASSWORD)
+
+        assertEquals(listOf(pack.id.hex), reopened.list(FileType.PACK))
+        val header = reopened.readPackHeader(pack.id)
+        assertEquals(pack.blobs, header)
+        assertArrayEquals(plaintext, reopened.readBlob(pack.id, header.single()))
+    }
+
+    @Test(expected = RepositoryException.Corrupted::class)
+    fun corruptedStoredPackIsDetected() {
+        val backend = InMemoryBackend()
+        val repository = create(backend)
+        val pack = repository.newPackWriter(BlobType.DATA).apply { add(ByteArray(100)) }.finish()
+        repository.savePack(pack)
+        backend.corrupt(FileType.PACK, pack.id.hex)
+
+        repository.readPackHeader(pack.id)
     }
 
     private companion object {
