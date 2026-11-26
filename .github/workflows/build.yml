@@ -17,4 +17,5 @@ jobs:
     uses: PVOT-OSS/workflows/.github/workflows/android-build.yml@main
     with:
       java-version: '21'
+      gradle-tasks: spotlessCheck detekt lintDebug testDebugUnitTest assembleDebug
       upload-artifacts: true
