@@ -45,4 +45,6 @@ include(":repo")
 
 include(":storage")
 
+include(":sources")
+
 includeBuild("PvotLib")
