@@ -31,6 +31,7 @@ private constructor(
         get() = Polynomial.parse(config.chunkerPolynomial)
 
     private val packReader = PackReader(masterKey, compressor)
+    private var lastPack: Pair<Id, ByteArray>? = null
 
     fun newPackWriter(type: BlobType): PackWriter = PackWriter(type, masterKey, compressor, random)
 
@@ -89,8 +90,10 @@ private constructor(
     fun list(type: FileType): List<String> = backend.list(type)
 
     private fun loadPack(id: Id): ByteArray {
+        lastPack?.let { (cachedId, data) -> if (cachedId == id) return data }
         val data = backend.load(FileType.PACK, id.hex)
         if (Id.hash(data) != id) throw RepositoryException.Corrupted(FileType.PACK, id.hex)
+        lastPack = id to data
         return data
     }
 
