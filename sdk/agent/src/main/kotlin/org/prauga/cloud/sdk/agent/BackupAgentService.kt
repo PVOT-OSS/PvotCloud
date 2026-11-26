@@ -16,8 +16,6 @@ import java.io.FileOutputStream
 import java.io.FilterOutputStream
 import java.io.IOException
 import java.io.OutputStream
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import org.prauga.cloud.sdk.BackupContract
 import org.prauga.cloud.sdk.IBackupAgent
 import org.prauga.cloud.sdk.IResultCallback
@@ -25,9 +23,8 @@ import org.prauga.cloud.sdk.ResultCode
 
 class BackupAgentService : Service() {
 
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
-    private val config by lazy { AgentConfigLoader.load(this) }
-    private val work by lazy { AgentWork(this, config) }
+    private val executor = AgentRuntime.executor
+    private val work by lazy { AgentRuntime.work(this) }
 
     private val binder =
         object : IBackupAgent.Stub() {
@@ -74,11 +71,6 @@ class BackupAgentService : Service() {
 
     override fun onBind(intent: Intent): IBinder? = binder.takeIf {
         intent.action == BackupContract.ACTION_AGENT
-    }
-
-    override fun onDestroy() {
-        executor.shutdown()
-        super.onDestroy()
     }
 
     private fun trusted(): Boolean = TrustedProviders.isTrusted(this, Binder.getCallingUid())
