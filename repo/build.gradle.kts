@@ -9,5 +9,6 @@ plugins {
 dependencies {
     implementation(libs.bouncycastle.bcprov)
     implementation(libs.kotlinx.serialization.json)
+    compileOnly(libs.zstd.jni)
     testImplementation(libs.zstd.jni)
 }

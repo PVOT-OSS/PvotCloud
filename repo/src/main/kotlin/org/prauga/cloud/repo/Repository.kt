@@ -46,7 +46,15 @@ private constructor(
         return when (plaintext[0]) {
             JSON_OBJECT,
             JSON_ARRAY -> plaintext
-            UNPACKED_ZSTD -> compressor.decompress(plaintext.copyOfRange(1, plaintext.size))
+            UNPACKED_ZSTD ->
+                try {
+                    compressor.decompress(
+                        plaintext.copyOfRange(1, plaintext.size),
+                        MAX_UNPACKED_SIZE,
+                    )
+                } catch (_: CompressionException) {
+                    throw RepositoryException.Corrupted(type, name)
+                }
             else -> throw RepositoryException.Corrupted(type, name)
         }
     }
@@ -58,6 +66,7 @@ private constructor(
         private val SUPPORTED_VERSIONS = 1..2
         private const val ID_SIZE = 32
         private const val UNPACKED_ZSTD: Byte = 2
+        private const val MAX_UNPACKED_SIZE = 128 * 1024 * 1024
         private const val JSON_OBJECT = '{'.code.toByte()
         private const val JSON_ARRAY = '['.code.toByte()
 

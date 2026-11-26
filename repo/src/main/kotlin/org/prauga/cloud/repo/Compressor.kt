@@ -7,5 +7,5 @@ interface Compressor {
 
     fun compress(data: ByteArray): ByteArray
 
-    fun decompress(data: ByteArray): ByteArray
+    fun decompress(data: ByteArray, maxSize: Int): ByteArray
 }
