@@ -53,16 +53,16 @@ class MediaStoreSource(private val context: Context) {
         return cursor.use {
             buildList {
                 while (it.moveToNext()) {
-                    val id = it.getLong(0)
-                    val name = it.getString(1) ?: continue
-                    val path = it.getString(2).orEmpty()
+                    val id = it.getLong(ID_COLUMN)
+                    val name = it.getString(NAME_COLUMN) ?: continue
+                    val path = it.getString(PATH_COLUMN).orEmpty()
                     add(
                         MediaItem(
                             id = id,
                             relativePath = if (relative) path else relativeFromData(path),
                             name = name,
-                            size = it.getLong(3),
-                            modified = Instant.ofEpochSecond(it.getLong(4)),
+                            size = it.getLong(SIZE_COLUMN),
+                            modified = Instant.ofEpochSecond(it.getLong(MODIFIED_COLUMN)),
                             video = collection == VIDEOS,
                         )
                     )
@@ -81,6 +81,11 @@ class MediaStoreSource(private val context: Context) {
 
     private companion object {
         const val ROOT_NAME = "media"
+        const val ID_COLUMN = 0
+        const val NAME_COLUMN = 1
+        const val PATH_COLUMN = 2
+        const val SIZE_COLUMN = 3
+        const val MODIFIED_COLUMN = 4
         @Suppress("DEPRECATION") const val DATA_COLUMN = MediaStore.MediaColumns.DATA
         val IMAGES: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val VIDEOS: Uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI

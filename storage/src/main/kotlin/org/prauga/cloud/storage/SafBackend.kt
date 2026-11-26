@@ -68,26 +68,23 @@ class SafBackend(private val tree: DocumentTree) : Backend {
         return listing(folderId)[fileName]?.takeIf { !it.isDirectory }
     }
 
-    private fun directory(path: String, create: Boolean): String? {
-        directories[path]?.let {
-            return it
-        }
+    private fun directory(path: String, create: Boolean): String? =
+        directories[path] ?: findDirectory(path, create)?.also { directories[path] = it }
+
+    private fun findDirectory(path: String, create: Boolean): String? {
         val (parent, name) = split(path)
         val parentId = directory(parent, create) ?: return null
         val children = listing(parentId)
         val existing = children[name]
-        val id =
-            when {
-                existing != null && existing.isDirectory -> existing.id
-                existing != null -> throw IOException("$path is a file, not a folder")
-                !create -> return null
-                else ->
-                    tree.createDirectory(parentId, name).also {
-                        children[name] = DocumentEntry(it, name, isDirectory = true)
-                    }
-            }
-        directories[path] = id
-        return id
+        return when {
+            existing != null && existing.isDirectory -> existing.id
+            existing != null -> throw IOException("$path is a file, not a folder")
+            !create -> null
+            else ->
+                tree.createDirectory(parentId, name).also {
+                    children[name] = DocumentEntry(it, name, isDirectory = true)
+                }
+        }
     }
 
     private fun listing(directoryId: String): MutableMap<String, DocumentEntry> =

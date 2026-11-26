@@ -4,6 +4,7 @@
 package org.prauga.cloud.sources
 
 import java.io.InputStream
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import org.prauga.cloud.repo.source.SourceDirectory
@@ -78,5 +79,5 @@ object MediaTree {
         }
     }
 
-    private val EPOCH: OffsetDateTime = OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+    private val EPOCH: OffsetDateTime = Instant.EPOCH.atOffset(ZoneOffset.UTC)
 }

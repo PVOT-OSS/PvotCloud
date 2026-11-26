@@ -37,12 +37,20 @@ constructor(
                     .map<HomeData, UiState<HomeData>> { UiState.Success(it) }
                     .catch { emit(UiState.Error(it.message.orEmpty(), it)) }
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState.Loading)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                UiState.Loading,
+            )
 
     fun onEvent(event: HomeEvent) {
         when (event) {
             HomeEvent.Retry -> attempt.value++
             HomeEvent.BackUpNow -> scheduler.backUpNow()
         }
+    }
+
+    private companion object {
+        const val STOP_TIMEOUT_MS = 5_000L
     }
 }

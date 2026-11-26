@@ -90,11 +90,11 @@ class BackupSettingsDataSource @Inject constructor(private val dataStore: DataSt
     }
 
     private fun lastBackup(preferences: Preferences): LastBackup? {
-        val at = preferences[LAST_BACKUP_AT] ?: return null
+        val at = preferences[LAST_BACKUP_AT]
         val outcome =
             BackupOutcome.entries.firstOrNull { it.name == preferences[LAST_BACKUP_OUTCOME] }
-                ?: return null
-        return LastBackup(Instant.ofEpochMilli(at), outcome)
+        return if (at != null && outcome != null) LastBackup(Instant.ofEpochMilli(at), outcome)
+        else null
     }
 
     private companion object {
