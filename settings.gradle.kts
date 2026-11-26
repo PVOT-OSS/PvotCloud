@@ -39,4 +39,4 @@ include(":core:data")
 
 include(":repo")
 
-providers.gradleProperty("pvotLibDir").orNull?.let { includeBuild(it) }
+includeBuild("PvotLib")
